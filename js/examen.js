@@ -24,68 +24,47 @@
     } catch (e) { box.innerHTML = `<div class="wrap"><div class="card center">${esc(e.message)}</div></div>`; }
   }
 
-  /* ---------- inicio ---------- */
+  /* ---------- inicio: evaluación programada para hoy ---------- */
   $("#chipFecha").textContent = new Date().toLocaleDateString("es-PE", { weekday: "long", day: "2-digit", month: "short", timeZone: "America/Lima" });
   (async function cargarJornadas() {
     const box = $("#jornadaBox");
     try {
       cargarPropios();
       const l = await rpc("eval_jornadas_activas");
-      const pedida = qs.get("j");
-      let lista = l || [];
-      if (pedida) lista = lista.filter(x => x.id === pedida).concat(lista.filter(x => x.id !== pedida));
-      if (!lista.length) { box.innerHTML = `<div class="center" style="padding:10px"><div style="font-size:40px">📅</div><h3 style="font-size:22px;margin:6px 0">No hay evaluación abierta hoy</h3><p class="muted small">Consulta con el personal de Seguridad. Las evaluaciones se habilitan el día programado.</p></div>`; return; }
-      const pintar = j => { jornada = j; box.innerHTML = `<span class="lbl">Evaluación</span><div class="row" style="margin-bottom:14px"><div class="grow"><b style="font-size:17px">${esc(j.titulo)}</b><div class="muted small">${fFecha(j.fecha)} · ${j.n} inscritos</div></div>${lista.length > 1 ? `<select id="selJ" class="inp" style="width:auto;padding:8px">${lista.map(x => `<option value="${x.id}" ${x.id === j.id ? "selected" : ""}>${fCorta(x.fecha)} · ${esc(x.titulo)}</option>`).join("")}</select>` : ""}</div>`;
-        const s = $("#selJ"); if (s) s.onchange = () => pintar(lista.find(x => x.id === s.value));
-        $("#buscarBox").classList.remove("hide"); $("#q").value = ""; $("#resultados").innerHTML = ""; };
-      pintar(lista[0]);
+      if (!l || !l.length) { box.innerHTML = `<div class="center" style="padding:10px"><div style="font-size:40px">📅</div><h3 style="font-size:22px;margin:6px 0">No hay evaluación programada para hoy</h3><p class="muted small">Las evaluaciones se habilitan solo el día programado por Seguridad Industrial. Consulta con el evaluador.</p></div>`; return; }
+      jornada = l[0];
+      box.innerHTML = `<span class="lbl">Evaluación de hoy</span><div style="margin-bottom:14px"><b style="font-size:17px">${esc(jornada.titulo)}</b><div class="muted small">${fFecha(jornada.fecha)}</div></div>`;
+      $("#buscarBox").classList.remove("hide"); setTimeout(() => $("#q").focus(), 300);
     } catch (e) { box.innerHTML = `<div class="center"><p>${esc(e.message)}</p><button class="btn btn-gold" onclick="location.reload()">Reintentar</button></div>`; }
   })();
 
-  let tq;
-  $("#q").addEventListener("input", e => {
-    clearTimeout(tq); const v = e.target.value.trim(); const out = $("#resultados");
-    if (v.length < 3) { out.innerHTML = v ? `<div class="muted small">Escribe al menos 3 letras…</div>` : ""; return; }
-    out.innerHTML = `<div class="row muted small"><span class="spin"></span> Buscando…</div>`;
-    tq = setTimeout(async () => {
-      try {
-        const l = await rpc("eval_buscar", { p_jornada: jornada.id, p_q: v });
-        if (!l.length) { out.innerHTML = `<div class="muted small">No se encontró. Revisa cómo escribiste tu apellido o busca con tu DNI. Si no figuras, avisa al evaluador.</div>`; return; }
-        out.innerHTML = l.map(p => `<button class="res" data-id="${p.id}"><span class="av">${esc(p.nombres.split(" ").slice(0, 2).map(w => w[0]).join(""))}</span><span class="grow"><b>${esc(p.nombres)}</b><small>${esc(p.empresa || "")} · ${esc(p.cargo || "")}</small></span>${p.estado === "finalizado" ? `<span class="tag tag-ok">Rendido</span>` : p.estado === "en_curso" ? `<span class="tag tag-mid">En curso</span>` : ""}</button>`).join("");
-        $$(".res", out).forEach(b => b.onclick = () => elegir(l.find(x => x.id === b.dataset.id)));
-      } catch (er) { out.innerHTML = `<div class="small" style="color:var(--bad)">${esc(er.message)}</div>`; }
-    }, 350);
-  });
+  const q = $("#q"), bD = $("#bDni");
+  q.addEventListener("input", () => { q.value = q.value.replace(/\D/g, ""); bD.disabled = q.value.length < 8; $("#resultados").textContent = ""; if (q.value.length === 8 && !q._auto) { q._auto = 1; } });
+  q.addEventListener("keydown", e => { if (e.key === "Enter" && !bD.disabled) bD.click(); });
+  bD.onclick = async () => {
+    const v = q.value.trim(); bD.disabled = true; bD.innerHTML = `<span class="spin"></span>`;
+    try {
+      const d = await rpc("eval_por_dni", { p_dni: v });
+      dni = v; part = d;
+      if (d.estado === "finalizado") return irResultado({ ...d });
+      mostrarDatos(d);
+    } catch (er) {
+      $("#resultados").innerHTML = `<span style="color:var(--bad)">${er.code === "NO_PROGRAMADO" ? "Tu DNI no figura en la evaluación de hoy. Verifica el número o consulta con el evaluador (Gestión Humana debe haberte registrado)." : esc(er.message)}</span>`;
+    }
+    bD.disabled = false; bD.textContent = "Ingresar →";
+  };
 
-  function elegir(p) {
-    part = p; ver("confirmar");
-    $("#cNombre").textContent = p.nombres;
-    $("#cSub").textContent = (p.empresa || "") + " · " + (p.cargo || "");
-    $("#cDatos").innerHTML = `<dt>Empresa</dt><dd>${esc(p.empresa || "—")}</dd><dt>Cargo</dt><dd>${esc(p.cargo || "—")}</dd><dt>Fecha</dt><dd>${fFecha(jornada.fecha)}</dd><dt>DNI</dt><dd class="muted">Confírmalo abajo para ver tus datos completos</dd>`;
-    $("#dni").value = ""; $("#dniMsg").textContent = ""; $("#acepto").checked = false; $("#btnIniciar").disabled = true;
-    $("#reglasCard").classList.toggle("hide", p.estado === "finalizado");
-    if (p.estado === "finalizado") $("#dniMsg").innerHTML = `<span style="color:var(--ink)">Ya rendiste este examen. Escribe tu DNI para ver tu resultado.</span>`;
-    setTimeout(() => $("#dni").focus(), 200);
+  function mostrarDatos(d) {
+    ver("confirmar");
+    const pets = resolverPets(d.pets_codigo, d.pets_nombre, d.cargo);
+    $("#cNombre").textContent = d.nombres;
+    $("#cSub").textContent = "Revisa que tus datos sean correctos";
+    $("#cDatos").innerHTML = `<dt>DNI / CE</dt><dd>${esc(d.dni)}</dd><dt>Nombres</dt><dd>${esc(d.nombres)}</dd><dt>Empresa</dt><dd>${esc(d.empresa || "—")} <span class="tag tag-n">${esc(d.tipo === "CIA" ? "CÍA" : d.tipo || "")}</span></dd><dt>Cargo</dt><dd>${esc(d.cargo || "—")}</dd><dt>PETS</dt><dd>${esc(pets.c)}<br><span class="small muted">${esc(pets.n)}</span></dd><dt>Fecha</dt><dd>${fFecha(d.fecha)}</dd>`;
+    $("#acepto").checked = d.estado === "en_curso";
+    $("#btnIniciar").textContent = d.estado === "en_curso" ? "▶ Continuar examen" : "▶ Iniciar examen";
+    $("#btnIniciar").disabled = !$("#acepto").checked;
   }
-  $("#btnVolver").onclick = () => ver("inicio");
-
-  let td;
-  $("#dni").addEventListener("input", e => {
-    clearTimeout(td); const v = e.target.value.replace(/\D/g, ""); e.target.value = v;
-    $("#btnIniciar").disabled = true;
-    if (v.length < 8) { $("#dniMsg").textContent = ""; return; }
-    td = setTimeout(async () => {
-      try {
-        const d = await rpc("eval_iniciar", { p_id: part.id, p_dni: v, p_comenzar: false });
-        dni = v; part = d; $("#dniMsg").textContent = "";
-        const pets = resolverPets(d.pets_codigo, d.pets_nombre, d.cargo);
-        $("#cDatos").innerHTML = `<dt>DNI</dt><dd>${esc(d.dni)} ✔</dd><dt>Empresa</dt><dd>${esc(d.empresa || "—")} <span class="tag tag-n">${esc(d.tipo || "")}</span></dd><dt>Cargo</dt><dd>${esc(d.cargo || "—")}</dd><dt>PETS</dt><dd>${esc(pets.c)}<br><span class="small muted">${esc(pets.n)}</span></dd><dt>Fecha</dt><dd>${fFecha(d.fecha)}</dd>`;
-        if (d.estado === "finalizado") return irResultado({ ...d });
-        if (d.estado === "en_curso") { $("#btnIniciar").textContent = "▶ Continuar examen"; $("#acepto").checked = true; }
-        $("#btnIniciar").disabled = !$("#acepto").checked;
-      } catch (er) { $("#dniMsg").textContent = er.message; }
-    }, 300);
-  });
+  $("#btnVolver").onclick = () => { ver("inicio"); q.value = ""; bD.disabled = true; };
   $("#acepto").onchange = () => { $("#btnIniciar").disabled = !($("#acepto").checked && dni); };
 
   $("#btnIniciar").onclick = async () => {

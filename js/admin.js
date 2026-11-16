@@ -1,23 +1,30 @@
 /* Panel de administración */
 (function () {
-  let PIN = sessionStorage.getItem("evpin") || "";
+  let PIN = "", CORREO = "";
+  try { const g = JSON.parse(localStorage.getItem("evses") || "null"); if (g && new Date(g.expira) > new Date()) { PIN = g.token; CORREO = g.email; } } catch (e) {}
   let JORNADAS = [], JACT = null, PARTS = [], refT = null;
   const FAMS = Object.entries(BANCO.fam).map(([k, v]) => [k, v.n]);
   const famN = k => (BANCO.fam[k] || {}).n || k;
-  const A = (fn, args = {}) => rpc(fn, { p_pin: PIN, ...args });
+  const A = async (fn, args = {}) => { try { return await rpc(fn, { p_pin: PIN, ...args }); } catch (e) { if (e.code === "PIN_INCORRECTO") { cerrarSesion(); throw new Error("Tu sesión expiró. Vuelve a ingresar."); } throw e; } };
+  function cerrarSesion() { try { localStorage.removeItem("evses"); } catch (e) {} PIN = ""; $("#app").classList.add("hide"); $("#login").classList.remove("hide"); }
 
-  /* ---------- sesión ---------- */
-  async function login(p) {
-    try { const ok = await rpc("eval_admin_login", { p_pin: p }); if (!ok) throw new Error("PIN incorrecto"); PIN = p; sessionStorage.setItem("evpin", p); entrar(); }
-    catch (e) { toast(e.message, "err"); $("#login").classList.remove("hide"); }
+  /* ---------- sesión: cuenta de Seguridad Industrial ---------- */
+  async function login() {
+    const b = $("#bLogin"); b.disabled = true; b.innerHTML = `<span class="spin"></span>`;
+    try {
+      const r = await rpc("eval_admin_login", { p_email: $("#mail").value.trim(), p_password: $("#pin").value });
+      PIN = r.token; CORREO = r.email; try { localStorage.setItem("evses", JSON.stringify(r)); } catch (e) {}
+      $("#pin").value = ""; entrar();
+    } catch (e) { toast(/CREDENCIALES/.test(e.message) ? "Correo o contraseña incorrectos" : e.message, "err"); }
+    b.disabled = false; b.textContent = "Ingresar";
   }
-  $("#bLogin").onclick = () => login($("#pin").value.trim());
-  $("#pin").onkeydown = e => { if (e.key === "Enter") login($("#pin").value.trim()); };
-  $("#bSalir").onclick = () => { sessionStorage.removeItem("evpin"); location.reload(); };
-  if (PIN) login(PIN); else $("#login").classList.remove("hide");
+  $("#bLogin").onclick = login;
+  $("#pin").onkeydown = e => { if (e.key === "Enter") login(); };
+  $("#bSalir").onclick = async () => { try { await rpc("eval_admin_salir", { p_pin: PIN }); } catch (e) {} cerrarSesion(); };
+  if (PIN) entrar(); else $("#login").classList.remove("hide");
 
   async function entrar() {
-    $("#login").classList.add("hide"); $("#app").classList.remove("hide");
+    $("#login").classList.add("hide"); $("#app").classList.remove("hide"); $("#miCorreo").textContent = CORREO;
     await cargarPropios();
     const nq = Object.values(BANCO.fam).reduce((a, f) => a + f.q.length, 0);
     $("#bancoInfo").textContent = `${PETS.length} PETS en catálogo, ${Object.keys(PROPIOS).length} PETS propios, ${nq + BANCO.normas.length + BANCO.emerg.length + BANCO.iperc.length + Object.values(BANCO_UNIDAD).reduce((x, l) => x + l.length, 0)} preguntas base (${FAMS.length} familias de riesgo).`;
@@ -42,11 +49,11 @@
     $("#listaJ").innerHTML = `<span class="spin"></span>`;
     try { JORNADAS = await A("eval_admin_jornadas"); } catch (e) { return toast(e.message, "err"); }
     const tot = JORNADAS.reduce((a, j) => (a.n += j.n, a.f += j.fin, a.a += j.aprob, a), { n: 0, f: 0, a: 0 });
-    $("#kpis").innerHTML = `<div class="kpi"><small>Jornadas</small><b>${JORNADAS.length}</b></div><div class="kpi"><small>Inscritos</small><b>${tot.n}</b></div><div class="kpi y"><small>Evaluados</small><b>${tot.f}</b></div><div class="kpi g"><small>Aprobados</small><b>${tot.a}</b></div><div class="kpi r"><small>Desaprobados</small><b>${tot.f - tot.a}</b></div><div class="kpi"><small>% aprobación</small><b>${tot.f ? Math.round(tot.a * 100 / tot.f) : 0}%</b></div>`;
-    if (!JORNADAS.length) { $("#listaJ").innerHTML = `<div class="card center" style="grid-column:1/-1"><div style="font-size:40px">📋</div><h3>Aún no hay jornadas</h3><p class="muted">Crea la primera cargando la plantilla de Gestión Humana.</p><button class="btn btn-gold" data-go="nueva">➕ Nueva jornada</button></div>`; return; }
+    $("#kpis").innerHTML = `<div class="kpi"><small>Evaluaciones</small><b>${JORNADAS.length}</b></div><div class="kpi"><small>Inscritos</small><b>${tot.n}</b></div><div class="kpi y"><small>Evaluados</small><b>${tot.f}</b></div><div class="kpi g"><small>Aprobados</small><b>${tot.a}</b></div><div class="kpi r"><small>Desaprobados</small><b>${tot.f - tot.a}</b></div><div class="kpi"><small>% aprobación</small><b>${tot.f ? Math.round(tot.a * 100 / tot.f) : 0}%</b></div>`;
+    if (!JORNADAS.length) { $("#listaJ").innerHTML = `<div class="card center" style="grid-column:1/-1"><div style="font-size:40px">📋</div><h3>Aún no hay evaluaciones</h3><p class="muted">Programa la primera con el Excel de Gestión Humana.</p><button class="btn btn-gold" data-go="nueva">📅 Programar evaluación</button></div>`; return; }
     $("#listaJ").innerHTML = JORNADAS.map(j => {
       const pa = j.n ? j.aprob * 100 / j.n : 0, pd = j.n ? (j.fin - j.aprob) * 100 / j.n : 0;
-      return `<button class="jc" data-j="${j.id}"><div class="row"><span class="d grow">${fFecha(j.fecha).replace(/ de \d{4}$/, "")}</span><span class="tag ${j.estado === "abierta" ? "tag-ok" : "tag-n"}">${j.estado}</span></div>
+      return `<button class="jc" data-j="${j.id}"><div class="row"><span class="d grow">${fFecha(j.fecha).replace(/ de \d{4}$/, "")}</span>${etiqueta(j)}</div>
         <div class="muted small">${esc(j.titulo)}</div>
         <div class="meter"><i style="width:${pa}%;background:var(--ok)"></i><i style="width:${pd}%;background:var(--bad)"></i></div>
         <div class="row small"><span class="grow"><b>${j.fin}</b>/${j.n} evaluados · <b style="color:var(--ok)">${j.aprob}</b> aprob.</span><span>Prom. <b>${j.prom ?? "—"}</b></span></div></button>`;
@@ -54,9 +61,16 @@
     $$(".jc").forEach(b => b.onclick = () => abrirJ(b.dataset.j));
   }
 
+  function etiqueta(j) {
+    const h = hoyLima();
+    if (j.estado !== "abierta") return `<span class="tag tag-n">Cerrada</span>`;
+    if (j.fecha === h) return `<span class="tag tag-ok">● Hoy · activa</span>`;
+    if (j.fecha > h) return `<span class="tag tag-mid">Programada</span>`;
+    return `<span class="tag tag-n">Pasada</span>`;
+  }
   async function abrirJ(id) {
     JACT = JORNADAS.find(j => j.id === id) || JACT; tab("detalle");
-    $("#dTit").textContent = fFecha(JACT.fecha); $("#dSub").textContent = JACT.titulo;
+    $("#dTit").textContent = fFecha(JACT.fecha); $("#dSub").innerHTML = esc(JACT.titulo) + " · " + etiqueta(JACT) + (JACT.fecha > hoyLima() ? " <span class='small muted'>Se activará automáticamente ese día.</span>" : "");
     $("#bEstado").textContent = JACT.estado === "abierta" ? "🔒 Cerrar" : "🔓 Reabrir";
     await cargarDetalle();
     refT = setInterval(() => { if ($("#autoRef").checked && !document.hidden) cargarDetalle(true); }, 20000);
@@ -86,9 +100,9 @@
     if (a === "reini" && await pregunta("Habilitar nuevo intento", `${p.nombres} podrá rendir el examen de nuevo (con preguntas distintas). El intento anterior queda guardado en el historial.`)) { await A("eval_admin_accion", { p_accion: "reiniciar", p_id: id }); toast("Nuevo intento habilitado", "ok"); cargarDetalle(); }
     if (a === "del" && await pregunta("Eliminar trabajador", `Se eliminará a ${p.nombres} de esta jornada, con su examen y firma. No se puede deshacer.`, true)) { await A("eval_admin_accion", { p_accion: "borrar_participante", p_id: id }); cargarDetalle(); }
   }
-  $("#bEstado").onclick = async () => { const nv = JACT.estado === "abierta" ? "cerrar" : "abrir"; await A("eval_admin_accion", { p_accion: nv, p_id: JACT.id }); JACT.estado = nv === "cerrar" ? "cerrada" : "abierta"; $("#bEstado").textContent = JACT.estado === "abierta" ? "🔒 Cerrar" : "🔓 Reabrir"; toast("Jornada " + JACT.estado, "ok"); };
-  $("#bBorrarJ").onclick = async () => { if (await pregunta("Eliminar jornada", `Se eliminará la jornada del ${fCorta(JACT.fecha)} con todos sus exámenes y constancias. No se puede deshacer.`, true)) { await A("eval_admin_accion", { p_accion: "borrar_jornada", p_id: JACT.id }); tab("jornadas"); } };
-  $("#bQR").onclick = () => mostrarQR(baseURL() + "?j=" + JACT.id, fFecha(JACT.fecha));
+  $("#bEstado").onclick = async () => { const nv = JACT.estado === "abierta" ? "cerrar" : "abrir"; await A("eval_admin_accion", { p_accion: nv, p_id: JACT.id }); JACT.estado = nv === "cerrar" ? "cerrada" : "abierta"; $("#bEstado").textContent = JACT.estado === "abierta" ? "🔒 Cerrar" : "🔓 Reabrir"; toast("Evaluación " + JACT.estado, "ok"); };
+  $("#bBorrarJ").onclick = async () => { if (await pregunta("Eliminar evaluación", `Se eliminará la evaluación del ${fCorta(JACT.fecha)} con todos sus exámenes y constancias. No se puede deshacer.`, true)) { await A("eval_admin_accion", { p_accion: "borrar_jornada", p_id: JACT.id }); tab("jornadas"); } };
+  $("#bQR").onclick = () => mostrarQR(baseURL(), fFecha(JACT.fecha));
   $("#bQRGen").onclick = () => mostrarQR(baseURL(), "Evaluación del día");
   $("#bAgregar").onclick = () => formAgregar();
 
@@ -195,7 +209,7 @@
   $("#bCrear").onclick = async () => {
     const fecha = $("#nFecha").value; if (!fecha) return toast("Elige la fecha", "err");
     const b = $("#bCrear"); b.disabled = true;
-    try { const r = await A("eval_admin_crear", { p_fecha: fecha, p_titulo: $("#nTit").value, p_filas: FILAS }); toast(`Jornada creada con ${r.n} trabajadores`, "ok"); FILAS = []; $("#prev").classList.add("hide"); await cargarJornadas(); abrirJ(r.id); }
+    try { const r = await A("eval_admin_crear", { p_fecha: fecha, p_titulo: $("#nTit").value, p_filas: FILAS }); toast(`Evaluación programada para el ${fCorta(fecha)} con ${r.n} trabajadores`, "ok"); FILAS = []; $("#prev").classList.add("hide"); await cargarJornadas(); abrirJ(r.id); }
     catch (e) { toast(e.message, "err"); } b.disabled = false;
   };
 
@@ -286,7 +300,13 @@
   }
 
   /* ---------- ajustes ---------- */
-  $("#bPin").onclick = async () => { const v = $("#pinN").value.trim(); if (v.length < 4) return toast("Mínimo 4 caracteres", "err"); await A("eval_admin_accion", { p_accion: "pin", p_id: null, p_valor: v }); PIN = v; sessionStorage.setItem("evpin", v); $("#pinN").value = ""; toast("PIN actualizado", "ok"); };
+  $("#bCuenta").onclick = async () => {
+    const m = $("#cuNuevoMail").value.trim(), n = $("#cuNueva").value, a = $("#cuActual").value;
+    if (!a) return toast("Escribe tu contraseña actual", "err");
+    if (!m && !n) return toast("No hay cambios", "err");
+    try { await A("eval_admin_cuenta", { p_actual: a, p_email: m, p_password: n }); if (m) CORREO = m.toLowerCase(); $("#miCorreo").textContent = CORREO; ["#cuNuevoMail", "#cuNueva", "#cuActual"].forEach(x => $(x).value = ""); toast("Cuenta actualizada", "ok"); }
+    catch (e) { toast(/ACTUAL/.test(e.message) ? "La contraseña actual no es correcta" : /CORTA/.test(e.message) ? "La nueva contraseña debe tener al menos 8 caracteres" : e.message, "err"); }
+  };
 
   /* ---------- utilidades de interfaz ---------- */
   function sheet(html) { const d = document.createElement("div"); d.className = "sheet"; d.innerHTML = `<div class="pan">${html}</div>`; document.body.appendChild(d); d.onclick = e => { if (e.target === d) d.remove(); }; $$("[data-x]", d).forEach(b => b.onclick = () => d.remove()); return d; }

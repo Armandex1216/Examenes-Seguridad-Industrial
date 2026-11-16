@@ -22,13 +22,14 @@
     <div class="card" id="cardBuscar">
       <div id="jornadaBox"><div class="row"><span class="spin"></span><span class="muted">Buscando la evaluación de hoy…</span></div></div>
       <div id="buscarBox" class="hide">
-        <label class="lbl" for="q">Busca tu nombre o DNI</label>
-        <input id="q" class="inp" placeholder="Escribe tus apellidos o DNI" autocomplete="off" autocapitalize="characters">
-        <div id="resultados" class="res-list"></div>
+        <label class="lbl" for="q">Ingresa tu número de DNI / CE</label>
+        <input id="q" class="inp" inputmode="numeric" maxlength="12" placeholder="Ej. 45871236" autocomplete="off" style="font-size:24px;letter-spacing:.12em;text-align:center;font-weight:700">
+        <button class="btn btn-gold btn-block" id="bDni" style="margin-top:12px" disabled>Ingresar →</button>
+        <div id="resultados" class="small" style="margin-top:10px"></div>
       </div>
     </div>
     <div class="card small muted" style="margin-top:14px">
-      <b style="color:var(--ink)">¿Cómo funciona?</b> Busca tu nombre, confirma tus datos con tu DNI y da clic en <b>Iniciar examen</b>. El tiempo corre desde ese momento. Al terminar verás tu nota y firmarás tu constancia.
+      <b style="color:var(--ink)">¿Cómo funciona?</b> Escribe tu DNI, revisa que tus datos sean correctos y da clic en <b>Iniciar examen</b>. El tiempo corre desde ese momento. Al terminar verás tu nota y firmarás tu constancia.
     </div>
   </div>
 </section>
@@ -38,17 +39,12 @@
   <header class="hero" style="padding-bottom:70px">
     <div class="top"><img class="logo" src="assets/img/logo-hochschild-blanco.png" alt=""><button class="chip" id="btnVolver">← Volver</button></div>
     <h1 id="cNombre" style="font-size:clamp(24px,6vw,34px)">—</h1>
-    <p id="cSub">Confirma tus datos</p>
+    <p id="cSub">Revisa que tus datos sean correctos</p>
   </header>
   <div class="wrap lift">
     <div class="card">
-      <span class="lbl">Datos del evaluado</span>
+      <span class="lbl">Tus datos (registrados por Gestión Humana)</span>
       <dl class="dl" id="cDatos"></dl>
-    </div>
-    <div class="card">
-      <label class="lbl" for="dni">Confirma tu identidad: escribe tu DNI</label>
-      <input id="dni" class="inp" inputmode="numeric" maxlength="12" placeholder="N° de DNI / CE" autocomplete="off">
-      <div id="dniMsg" class="small" style="color:var(--bad);margin-top:6px"></div>
     </div>
     <div class="card" id="reglasCard">
       <span class="lbl">Antes de empezar</span>
@@ -59,7 +55,7 @@
         <li><span class="ic">!</span><div><b>No salgas de esta página.</b> Cambiar de app, de pestaña o minimizar queda registrado. A la <b>3.ª salida</b> el examen se envía automáticamente.</div></li>
         <li><span class="ic">75</span><div>Apruebas con <b>75 % (30 de 40)</b>. Al final verás tu nota y firmarás tu constancia.</div></li>
       </ul>
-      <label class="chk"><input type="checkbox" id="acepto"> <span>Declaro que soy la persona indicada, que rendiré el examen de forma personal y sin ayuda, y que acepto las reglas de la evaluación.</span></label>
+      <label class="chk"><input type="checkbox" id="acepto"> <span>Confirmo que estos son mis datos. Declaro que soy la persona indicada, que rendiré el examen de forma personal y sin ayuda, y que acepto las reglas de la evaluación.</span></label>
       <button class="btn btn-gold btn-block" id="btnIniciar" style="margin-top:16px" disabled>▶ Iniciar examen</button>
     </div>
   </div>

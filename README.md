@@ -10,13 +10,13 @@ Examen de ingreso por QR que **reemplaza la entrevista**: 40 preguntas para marc
 | IPERC y derecho a negarse al trabajo inseguro | 5 |
 
 ## Páginas
-- `index.html`: examen del trabajador (es la página a la que lleva el QR). Busca su nombre, confirma con su DNI, rinde el examen, ve su nota y firma su constancia.
-- `admin.html`: panel de Seguridad (PIN). Permite crear jornadas cargando la plantilla Excel, mostrar el QR, ver resultados en vivo, exportar a Excel, imprimir constancias, habilitar reintentos y subir PETS propios.
+- `index.html`: examen del trabajador (es la página a la que lleva el QR). Solo escribe su DNI y aparecen sus datos del Excel; rinde el examen, ve su nota y firma su constancia.
+- `admin.html`: panel de la cuenta de Seguridad Industrial (correo y contraseña; sesión de 12 h). Permite crear jornadas cargando la plantilla Excel, mostrar el QR, ver resultados en vivo, exportar a Excel, imprimir constancias, habilitar reintentos y subir PETS propios.
 - `index.html?c=CODIGO`: verificación pública de la constancia (es el QR impreso en cada constancia).
 
 ## Flujo semanal (lunes)
 1. Gestión Humana llena `plantilla/Plantilla_Evaluacion_Ingreso.xlsx` (DNI, nombres, empresa, CIA/contratista, cargo y código PETS).
-2. En `admin.html` → **Nueva jornada** → cargar el Excel → **Crear**. Los exámenes no se guardan: cada uno se arma al iniciar, con una semilla por trabajador, a partir del banco fijo (1040 PETS, más de 370 preguntas generales y 68 propias de la unidad: tolerancia cero, reglas de oro, reglas internas, ADN, propósito y Central Z1, tomadas del Panel Informativo), así no se genera nada nuevo cada semana.
+2. En `admin.html` → **Programar evaluación** → elegir el día → cargar el Excel → **Programar**. La evaluación se activa sola ese día (hora de Lima). Los exámenes no se guardan: cada uno se arma al iniciar, con una semilla por trabajador, a partir del banco fijo (1040 PETS, más de 370 preguntas generales y 68 propias de la unidad: tolerancia cero, reglas de oro, reglas internas, ADN, propósito y Central Z1, tomadas del Panel Informativo), así no se genera nada nuevo cada semana.
 3. Proyectar o imprimir el **QR general**. Es fijo y siempre abre la jornada del día.
 4. Al terminar, **Cerrar** la jornada, exportar el Excel e imprimir las constancias.
 
@@ -24,7 +24,7 @@ Examen de ingreso por QR que **reemplaza la entrevista**: 40 preguntas para marc
 El examen se abre en pantalla completa y muestra una marca de agua con el nombre y el DNI. Se bloquean copiar, pegar, el clic derecho y el botón atrás. Cada salida (cambiar de app o pestaña, minimizar) queda registrada, y a la 3.ª el examen se envía solo. Las preguntas y las alternativas salen en distinto orden para cada persona. El tiempo se mide con el reloj del servidor y sigue corriendo aunque se recargue la página.
 
 ## Base de datos
-Usa el mismo proyecto Supabase de las diapositivas (**OPT control**), solo con tablas `eval_` (ver `supabase/eval_schema.sql`). Las tablas `diapo_` no se modifican. El acceso es únicamente por funciones (RPC) protegidas por DNI o por PIN de administrador. Para no salir del plan gratuito:
+Usa el mismo proyecto Supabase de las diapositivas (**OPT control**), solo con tablas `eval_` (ver `supabase/eval_schema.sql`). Las tablas `diapo_` no se modifican. El acceso es únicamente por funciones (RPC) protegidas por DNI o por la sesión de la cuenta de Seguridad Industrial (contraseña cifrada con bcrypt). Para no salir del plan gratuito:
 - No se guarda ningún archivo en Storage.
 - La firma se guarda como PNG pequeño (unos 10–20 KB).
 - No usa Realtime: el panel consulta cada 20 s solo mientras está abierto.
