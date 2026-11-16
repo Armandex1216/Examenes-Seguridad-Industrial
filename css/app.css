@@ -164,3 +164,7 @@ body.exam{background:#f4efe3;user-select:none;-webkit-user-select:none;-webkit-t
 }
 @media (max-width:560px){.doc{padding:20px 16px}.doc .firmas{grid-template-columns:1fr 1fr}.doc .qr{grid-column:1/-1}}
 body.exam #pie{display:none}
+
+.ficha h4{font-family:Oswald;font-size:14px;margin:14px 0 6px;letter-spacing:.04em;border-bottom:2px solid var(--gold);padding-bottom:3px}
+.ficha .fhd td{border:1.5px solid #333}
+.ficha div{line-height:1.5}

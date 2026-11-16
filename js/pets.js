@@ -261,18 +261,18 @@ Transporte de materiales con carretilla|man,ord
 Construcción de cimentaciones|exc,conc
 Instalación de mallas perimétricas|her,man,exc
 Montaje de tanques metálicos|iza,alt,cal`,
-    SOL: `Soldadura por arco eléctrico (SMAW)|cal,ele
-Soldadura MIG/MAG|cal,ele,inc
-Soldadura TIG|cal,ele
+    SOL: `Soldadura por arco eléctrico (SMAW)|cal
+Soldadura MIG/MAG|cal,inc
+Soldadura TIG|cal
 Soldadura en altura|cal,alt
 Soldadura en espacios confinados|cal,conf
 Corte con oxiacetileno|cal,inc
-Corte con plasma|cal,ele
+Corte con plasma|cal,her
 Esmerilado de piezas|her,cal
 Biselado de tuberías|cal,her
 Soldadura de tuberías|cal,pres
 Termofusión de tuberías HDPE|cal,pres
-Electrofusión de tuberías HDPE|cal,ele,pres
+Electrofusión de tuberías HDPE|cal,pres
 Soldadura de recubrimiento duro (hardfacing)|cal,eqp
 Reparación de cucharones por soldadura|cal,iza,eqp
 Fabricación de estructuras metálicas|cal,iza,her
@@ -500,7 +500,7 @@ Atención de primeros auxilios|gen`
     ["MEL", ["motor eléctrico","tablero de distribución","variador de frecuencia","transformador","celda de media tensión","banco de baterías","sistema de alumbrado","sistema de puesta a tierra","sensor de nivel","medidor de flujo","sistema de control distribuido","cargador de baterías"],
      ["Mantenimiento preventivo de","Mantenimiento correctivo de","Instalación de","Pruebas y puesta en servicio de"], {"Mantenimiento preventivo de":"ele,blq","Mantenimiento correctivo de":"ele,blq","Instalación de":"ele,her,alt","Pruebas y puesta en servicio de":"ele,blq"}],
     ["SOL", ["acero estructural","acero inoxidable","tubería de acero al carbono","planchas antidesgaste","chutes y tolvas","tanques metálicos","barandas y escaleras","rieles"],
-     ["Soldadura de","Corte de","Esmerilado de","Reparación de"], {"Soldadura de":"cal,ele","Corte de":"cal,inc","Esmerilado de":"her,cal","Reparación de":"cal,her,iza"}],
+     ["Soldadura de","Corte de","Esmerilado de","Reparación de"], {"Soldadura de":"cal,her","Corte de":"cal,inc","Esmerilado de":"her,cal","Reparación de":"cal,her,iza"}],
     ["CON", ["oficinas","talleres","almacenes","campamentos","comedores","subestaciones","plataformas","muros","losas","tanques de concreto","canales","caminos de acceso"],
      ["Construcción de","Mantenimiento de","Demolición de"], {"Construcción de":"conc,exc,her","Mantenimiento de":"her,and,ord","Demolición de":"her,hig,eqp"}],
     ["GAS", ["red de agua potable","red de desagüe","red de agua industrial","red contra incendio","red de aire comprimido","sistema de bombeo","tanque de agua","planta de tratamiento"],

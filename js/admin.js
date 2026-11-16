@@ -220,12 +220,17 @@
     $("#petsCount").textContent = `${PETS.length} PETS de catálogo en ${Object.keys(AREAS_PETS).length} áreas + ${Object.keys(PROPIOS).length} propios. Gestión Humana usa estos códigos en la plantilla.`;
     const q = norm($("#pq").value), a = $("#pa").value;
     const l = PETS.filter(p => (!a || p.a === a) && (!q || norm(p.c + " " + p.n).includes(q)));
-    $("#tblPets").innerHTML = `<tr><th>Código</th><th>Tarea / PETS</th><th>Área</th><th>Riesgos evaluados</th><th></th></tr>` + l.slice(0, 300).map(p => `<tr><td><b>${p.c}</b></td><td>${esc(p.n)}</td><td class="small">${AREAS_PETS[p.a]}</td><td class="small">${p.f.map(famN).join(" · ")}</td><td class="acts"><button data-prev="${p.c}">Ver examen</button></td></tr>`).join("") + (l.length > 300 ? `<tr><td colspan="5" class="muted">… ${l.length - 300} más. Afina la búsqueda.</td></tr>` : "");
+    $("#tblPets").innerHTML = `<tr><th>Código</th><th>Tarea / PETS</th><th>Área</th><th>Riesgos evaluados</th><th></th></tr>` + l.slice(0, 300).map(p => `<tr><td><b>${p.c}</b></td><td>${esc(p.n)}</td><td class="small">${AREAS_PETS[p.a]}</td><td class="small">${p.f.map(famN).join(" · ")}</td><td class="acts"><button data-ficha="${p.c}">Ficha PETS</button><button data-prev="${p.c}">Ver examen</button></td></tr>`).join("") + (l.length > 300 ? `<tr><td colspan="5" class="muted">… ${l.length - 300} más. Afina la búsqueda.</td></tr>` : "");
     $$("[data-prev]").forEach(b => b.onclick = () => previewExamen(b.dataset.prev));
+    $$("[data-ficha]").forEach(b => b.onclick = () => verFicha(resolverPets(b.dataset.ficha)));
+  }
+  function verFicha(pets) {
+    const s = sheet(`<div class="row noprint"><h2 class="grow" style="font-size:22px">Ficha PETS · formato Anexo 10 D.S. 024-2016-EM</h2><button class="btn btn-dark" data-pr>🖨 Imprimir / PDF</button><button class="btn btn-line" data-x>✕</button></div>${htmlFicha(pets)}`);
+    $("[data-pr]", s).onclick = () => { let pa = $("#printArea"); if (!pa) { pa = document.createElement("div"); pa.id = "printArea"; document.body.appendChild(pa); } pa.innerHTML = htmlFicha(pets); document.body.classList.add("printing"); setTimeout(() => { window.print(); setTimeout(() => document.body.classList.remove("printing"), 500); }, 200); };
   }
   function previewExamen(cod, nombre) {
     const ex = armarExamen({ id: "prev-" + Math.random(), intento: 1, pets_codigo: cod, pets_nombre: nombre || "", cargo: "" });
-    sheet(`<div class="row"><div class="grow"><h2 style="font-size:22px">Vista previa de examen</h2><div class="muted small">${esc(ex.pets.c)} · ${esc(ex.pets.n)} — cada trabajador recibe una combinación distinta</div></div><button class="btn btn-line" data-x>✕</button></div>
+    sheet(`<div class="row"><div class="grow"><h2 style="font-size:22px">Vista previa de examen</h2><div class="muted small">${esc(ex.pets.c)} · ${esc(ex.pets.n)} — cada trabajador recibe una combinación distinta</div></div><button class="btn btn-line" data-x>✕</button></div><div class="card small">El examen evalúa lo que establece la <b>ficha PETS (formato Anexo 10)</b> de esta tarea: sus EPP, controles y restricciones según los riesgos <b>${esc(ex.pets.f.map(famN).join(", ") || "generales")}</b>.</div>
       ${CFG.secciones.map(s => `<h3 style="margin:16px 0 8px;font-size:18px;color:var(--gold3)">${esc(s.n)} (${s.cant})</h3>` + ex.preguntas.map((q, i) => q.s !== s.k ? "" : `<div class="qprev"><b>${i + 1}. ${esc(q.t)}</b><ol type="A">${q.o.map((o, k) => `<li class="${k === q.c ? "c" : ""}">${esc(o)}</li>`).join("")}</ol></div>`).join("")).join("")}`);
   }
 
@@ -263,7 +268,7 @@
       <div class="card"><label class="lbl">3 · Riesgos de la tarea (de aquí salen sus preguntas)</label><div class="fams" id="eFams">${FAMS.map(([k, n]) => `<span class="fam ${P.familias.includes(k) ? "on" : ""}" data-f="${k}">${n}</span>`).join("")}</div></div>
       <div class="card"><div class="row"><label class="lbl grow">4 · Preguntas propias del PETS (opcional, hasta 10 entran a cada examen)</label><button class="btn btn-line small" id="eAddQ">➕ Pregunta</button><label class="btn btn-line small" style="position:relative">⬆ Desde Excel<input type="file" id="eQx" accept=".xlsx,.csv" style="position:absolute;inset:0;opacity:0"></label></div>
         <div class="small muted" style="margin-bottom:8px">Columnas: Pregunta · Respuesta correcta (verde) · 3 incorrectas. Todo de marcar, nivel medio, enfocado en seguridad.</div><div class="qed" id="eQs"></div></div>
-      <div class="row"><button class="btn btn-gold" id="eSave">✓ Guardar PETS</button><button class="btn btn-line" id="ePrev">Ver examen de ejemplo</button>${p ? `<button class="btn btn-red" id="eDel">Eliminar</button>` : ""}</div>${datalistPets()}`);
+      <div class="row"><button class="btn btn-gold" id="eSave">✓ Guardar PETS</button><button class="btn btn-line" id="eFicha">Ficha Anexo 10</button><button class="btn btn-line" id="ePrev">Ver examen de ejemplo</button>${p ? `<button class="btn btn-red" id="eDel">Eliminar</button>` : ""}</div>${datalistPets()}`);
     const pintarQs = () => { $("#eQs", s).innerHTML = P.preguntas.map((q, i) => `<div class="qrow" data-i="${i}">${[0, 1, 2, 3, 4].map(k => `<input data-k="${k}" class="${k === 1 ? "ok" : ""}" value="${esc(q[k] || "")}" placeholder="${["Pregunta", "Correcta", "Incorrecta 1", "Incorrecta 2", "Incorrecta 3"][k]}">`).join("")}<button class="btn btn-line small" data-rm>✕</button></div>`).join("") || `<div class="muted small">Sin preguntas propias: se usarán las del banco según los riesgos marcados.</div>`;
       $$(".qrow", s).forEach(r => { const i = +r.dataset.i; $$("input", r).forEach(inp => inp.oninput = () => P.preguntas[i][+inp.dataset.k] = inp.value); $("[data-rm]", r).onclick = () => { P.preguntas.splice(i, 1); pintarQs(); }; }); };
     pintarQs();
@@ -295,6 +300,7 @@
       await A("eval_admin_pets_guardar", { p_codigo: d.codigo, p_nombre: d.nombre, p_area: d.area, p_base: d.base, p_familias: d.familias, p_preguntas: d.preguntas });
       await cargarPropios(); toast("PETS guardado", "ok"); s.remove(); pintarPropios();
     };
+    $("#eFicha", s).onclick = () => { const d = leer(); verFicha({ c: d.codigo || "—", n: d.nombre || "—", a: d.area, f: [...new Set([...d.familias, ...((PETS_MAP[d.base] || {}).f || [])])] }); };
     $("#ePrev", s).onclick = () => { const d = leer(); PROPIOS["__PREV"] = { ...d, codigo: "__PREV" }; previewExamen("__PREV"); delete PROPIOS["__PREV"]; };
     if (p) $("#eDel", s).onclick = async () => { if (await pregunta("Eliminar PETS", `Se eliminará ${p.codigo} y sus preguntas propias.`, true)) { await A("eval_admin_pets_borrar", { p_codigo: p.codigo }); await cargarPropios(); s.remove(); pintarPropios(); } };
   }

@@ -96,7 +96,8 @@ iza: { n: "Izaje de cargas", q: [
 ]},
 exc: { n: "Excavaciones y zanjas", q: [
  ["¿Qué peligro principal existe en excavaciones y zanjas?", "Derrumbe o colapso de paredes y atrapamiento", "Exceso de luz", "Ruido de pájaros", "Frío"],
- ["El material excavado debe colocarse:", "Alejado del borde (al menos 60 cm o según procedimiento)", "Pegado al borde", "Dentro de la zanja", "Sobre los compañeros"],
+ ["Según el D.S. 024-2016-EM, el material excavado debe colocarse del borde a una distancia no menor a:", "La mitad de la profundidad de la excavación", "10 cm", "Pegado al borde para ahorrar espacio", "Dentro de la zanja"],
+ ["Según el D.S. 024-2016-EM, una excavación es trabajo de alto riesgo (requiere PETAR) a partir de:", "1.50 m de profundidad", "3.00 m de profundidad", "5.00 m de profundidad", "Cualquier profundidad sin permiso"],
  ["Antes de excavar se debe:", "Identificar interferencias (cables, tuberías) y contar con el permiso de excavación", "Excavar y ver qué aparece", "Solo marcar con pintura", "Esperar a que llueva"],
  ["Para evitar el derrumbe de una zanja profunda se usa:", "Entibado, talud adecuado o sistema de protección", "Solo cinta de seguridad", "Agua para compactar", "Ningún sistema"],
  ["El acceso y salida de una zanja profunda debe ser por:", "Escaleras o rampas adecuadas, cercanas al trabajador", "Trepando por las paredes", "Saltando", "Colgándose de la excavadora"],
@@ -336,7 +337,14 @@ gen: { n: "Seguridad en el PETS", q: [
  ["La inspección de herramientas y equipos antes de la tarea es:", "Un paso obligatorio para evitar fallas y accidentes", "Opcional", "Solo para supervisores", "Solo una vez al mes"],
  ["Si durante la tarea aparece un peligro nuevo no considerado, se debe:", "Parar, actualizar el IPERC y controlar el peligro antes de continuar", "Seguir trabajando", "Esperar el fin del turno", "Ignorarlo"],
  ["La comunicación entre los trabajadores de una misma tarea debe ser:", "Clara y permanente (radio, señales acordadas)", "Solo al final", "Innecesaria", "Por gestos al azar"],
- ["El supervisor debe verificar en campo que:", "El personal cumple el PETS, tiene su EPP y los controles están implementados", "Solo que lleguen temprano", "Nada", "Solo la producción"]
+ ["El supervisor debe verificar en campo que:", "El personal cumple el PETS, tiene su EPP y los controles están implementados", "Solo que lleguen temprano", "Nada", "Solo la producción"],
+ ["Según el D.S. 024-2016-EM, los PETS son elaborados por el titular minero:", "Con participación de los trabajadores", "Sin consultar a los trabajadores", "Solo por el área legal", "Solo por el fabricante de los equipos"],
+ ["Según el formato del Anexo 10 del D.S. 024-2016-EM, un PETS contiene:", "Personal, EPP, equipos/herramientas/materiales, procedimiento y restricciones", "Solo el nombre de la tarea y la firma", "El presupuesto y el cronograma", "Solo la lista de EPP"],
+ ["Si una tarea no está en el IPERC de línea base y no tiene PETS, el D.S. 024-2016-EM exige:", "Elaborar un Análisis de Trabajo Seguro (ATS) antes de realizarla", "Realizarla sin ningún documento", "Esperar a fin de año", "Solo avisar por radio"],
+ ["Según el D.S. 024-2016-EM, los PETS deben:", "Explicarse a los trabajadores, verificarse su entendimiento y estar disponibles en las áreas de trabajo", "Guardarse en la oficina central", "Leerse solo si hay accidente", "Conocerlos solo el gerente"],
+ ["En el formato del Anexo 10, el PETS es aprobado por:", "El Gerente de Operaciones (tras la revisión del Gerente del área y del Gerente de SSO)", "El trabajador más antiguo", "El almacenero", "Cualquier compañero"],
+ ["El PETAR de un trabajo de alto riesgo debe ser autorizado y firmado:", "Para cada turno, por el supervisor y el jefe de área", "Una sola vez al año", "Solo por el trabajador", "Después de terminar el trabajo"],
+ ["Cumplir los estándares, PETS y prácticas de trabajo seguro es, según el D.S. 024-2016-EM:", "Una obligación de todos los trabajadores", "Opcional para contratistas", "Solo para supervisores", "Solo para trabajadores nuevos"]
 ]}
 },
 

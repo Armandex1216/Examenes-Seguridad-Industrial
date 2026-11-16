@@ -29,3 +29,8 @@ Usa el mismo proyecto Supabase de las diapositivas (**OPT control**), solo con t
 - La firma se guarda como PNG pequeño (unos 10–20 KB).
 - No usa Realtime: el panel consulta cada 20 s solo mientras está abierto.
 - Un examen completo ocupa unos 15–30 KB, así que 50 trabajadores por semana suman unos 70 MB al año (el límite gratuito es 500 MB).
+
+## Base normativa de los PETS
+- **D.S. 024-2016-EM**: Arts. 98–99 (elaboración con participación de los trabajadores, difusión y verificación; ATS si la tarea no tiene PETS), **Anexo 10** (formato: 1. Personal · 2. EPP · 3. Equipos/herramientas/materiales · 4. Procedimiento · 5. Restricciones · Preparado por el supervisor del área, revisado por el gerente del área y el gerente de SSO, aprobado por el gerente de operaciones), Arts. 129–136 (trabajos de alto riesgo y PETAR).
+- **Referencias internacionales**: el paso a paso sigue el Análisis de Riesgos de la Tarea de OSHA 3071 (paso → peligro → control), y los controles se ordenan según la jerarquía de la ISO 45001:2018 (8.1.2).
+- En el panel, **Catálogo PETS → Ficha PETS** genera para cada tarea su ficha referencial en el formato del Anexo 10. El examen evalúa lo que dice esa ficha. La ficha no reemplaza el PETS oficial de la empresa.
