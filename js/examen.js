@@ -246,20 +246,30 @@
     $("#rCod").textContent = cod;
     $("#rVerC").href = "?c=" + encodeURIComponent(cod);
   }
-  let trazos = 0;
+  let trazos = 0, sigX = null;
   function initFirma() {
-    const cv = $("#sig"), box = cv.parentElement, dpr = Math.max(1, window.devicePixelRatio || 1);
-    cv.width = box.clientWidth * dpr; cv.height = box.clientHeight * dpr;
-    const x = cv.getContext("2d"); x.scale(dpr, dpr); x.lineWidth = 2.6; x.lineCap = "round"; x.lineJoin = "round"; x.strokeStyle = "#0b2a6b";
-    let dib = false, lp = null; trazos = 0;
+    const cv = $("#sig"), box = cv.parentElement;
+    const medir = () => {
+      const dpr = Math.max(1, window.devicePixelRatio || 1), w = box.clientWidth, h = box.clientHeight;
+      if (!w || !h) return false;
+      if (cv.width === Math.round(w * dpr) && sigX) return true;
+      cv.width = Math.round(w * dpr); cv.height = Math.round(h * dpr);
+      sigX = cv.getContext("2d"); sigX.setTransform(dpr, 0, 0, dpr, 0, 0);
+      sigX.lineWidth = 2.6; sigX.lineCap = "round"; sigX.lineJoin = "round"; sigX.strokeStyle = "#0b2a6b";
+      trazos = 0; $("#sigPh").style.display = ""; return true;
+    };
+    if (!medir()) { let n = 0; const t = setInterval(() => { if (medir() || ++n > 50) clearInterval(t); }, 150); }
+    window.addEventListener("resize", () => { if (!trazos) { sigX = null; medir(); } });
+    let dib = false, lp = null;
     const pos = e => { const r = cv.getBoundingClientRect(); return [e.clientX - r.left, e.clientY - r.top]; };
-    cv.onpointerdown = e => { dib = true; lp = pos(e); cv.setPointerCapture(e.pointerId); $("#sigPh").style.display = "none"; };
-    cv.onpointermove = e => { if (!dib) return; const p = pos(e); x.beginPath(); x.moveTo(...lp); x.lineTo(...p); x.stroke(); lp = p; trazos++; };
-    cv.onpointerup = cv.onpointercancel = () => dib = false;
-    $("#sigClear").onclick = () => { x.clearRect(0, 0, cv.width, cv.height); trazos = 0; $("#sigPh").style.display = ""; };
+    cv.onpointerdown = e => { if (!medir()) return; dib = true; lp = pos(e); try { cv.setPointerCapture(e.pointerId); } catch (er) {} $("#sigPh").style.display = "none"; e.preventDefault(); };
+    cv.onpointermove = e => { if (!dib || !sigX) return; const p = pos(e); sigX.beginPath(); sigX.moveTo(...lp); sigX.lineTo(...p); sigX.stroke(); lp = p; trazos++; e.preventDefault(); };
+    cv.onpointerup = cv.onpointercancel = cv.onpointerleave = () => dib = false;
+    $("#sigClear").onclick = () => { if (sigX) sigX.clearRect(0, 0, cv.width, cv.height); trazos = 0; $("#sigPh").style.display = ""; };
   }
   $("#sigOk").onclick = async () => {
     if (trazos < 15) return toast("Dibuja tu firma en el recuadro", "err");
+    if (!$("#sig").width) return toast("Vuelve a dibujar tu firma", "err");
     const cv = $("#sig"), o = document.createElement("canvas"); o.width = 420; o.height = Math.round(420 * cv.height / cv.width);
     const ox = o.getContext("2d"); ox.drawImage(cv, 0, 0, o.width, o.height);
     const b = $("#sigOk"); b.disabled = true; b.innerHTML = `<span class="spin"></span>`;
