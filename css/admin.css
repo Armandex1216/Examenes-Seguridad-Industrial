@@ -21,7 +21,7 @@ body.adm{background:#f4efe3}
 .jgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px}
 .jc{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px;cursor:pointer;transition:.15s;text-align:left;width:100%;color:var(--ink)}
 .jc:hover{border-color:var(--gold);transform:translateY(-2px);box-shadow:var(--sh)}
-.jc .d{font-family:Oswald;font-size:22px;text-transform:capitalize}
+.jc .d{font-family:Oswald;font-size:22px}
 .jc .meter{height:8px;background:#eee6d6;border-radius:9px;overflow:hidden;margin:10px 0 6px;display:flex}
 .jc .meter i{display:block;height:100%}
 .tbl{width:100%;border-collapse:collapse;font-size:13.5px;background:var(--paper)}
