@@ -87,7 +87,7 @@
         const est = p.estado === "finalizado" ? `<span class="tag tag-n">Finalizado</span>` : p.estado === "en_curso" ? `<span class="tag tag-mid">En curso · ${fHora(p.inicio).slice(0, 5)}</span>` : `<span class="tag tag-n" style="opacity:.6">Pendiente</span>`;
         const res = p.estado !== "finalizado" ? "" : p.aprobado ? `<span class="tag tag-ok">Aprobado</span>` : `<span class="tag tag-bad">Desaprobado</span>`;
         return `<tr><td>${i + 1}</td><td><b>${esc(p.nombres)}</b>${p.intento > 1 ? ` <span class="tag tag-mid">Intento ${p.intento}</span>` : ""}</td><td>${esc(p.dni)}</td><td>${esc(p.empresa || "")}<br><span class="small muted">${esc(p.tipo || "")}</span></td><td>${esc(p.cargo || "")}</td>
-          <td title="${esc(pets.n)}">${esc(p.pets_codigo || "—")}${pets.origen === "catalogo" || pets.origen === "propio" ? "" : ` <span class="tag tag-mid" title="Código no catalogado: se usaron palabras clave">⚠</span>`}</td>
+          <td title="${esc(pets.n)}">${esc(p.pets_codigo || "—")}${pets.origen === "catalogo" || pets.origen === "propio" ? "" : pets.origen === "similar" ? ` <span class="tag tag-ok" title="Se parece a ${esc(pets.similar.c)} · ${esc(pets.similar.n)}">≈${Math.round(pets.similar.score * 100)}%</span>` : ` <span class="tag tag-mid" title="Sin parecido claro: se usaron palabras clave">⚠</span>`}</td>
           <td>${est}</td><td><b>${p.nota != null ? Number(p.nota).toFixed(1) : ""}</b></td><td>${p.total ? Math.round(p.correctas * 100 / p.total) + "%" : ""}</td><td>${res}</td><td>${p.estado === "pendiente" ? "" : (p.salidas || 0)}</td><td>${p.tiene_firma ? "✔" : p.estado === "finalizado" ? "<span class='muted'>pend.</span>" : ""}</td>
           <td class="acts">${p.estado === "finalizado" ? `<button data-a="ver" data-id="${p.id}">Examen</button><button data-a="const" data-id="${p.id}">Constancia</button>` : ""}<button data-a="reini" data-id="${p.id}" title="Habilitar un nuevo intento">↺</button><button data-a="del" data-id="${p.id}" title="Eliminar">🗑</button></td></tr>`;
       }).join("");
@@ -194,17 +194,17 @@
   function previa() {
     if (!FILAS.length) return $("#prev").classList.add("hide");
     $("#prev").classList.remove("hide");
-    let nc = 0, np = 0, nk = 0, ng = 0;
+    let nc = 0, np = 0, ns = 0, nk = 0, ng = 0;
     const dup = new Set(), vistos = new Set();
     FILAS.forEach(f => { if (vistos.has(f.dni)) dup.add(f.dni); vistos.add(f.dni); });
     $("#tblPrev").innerHTML = `<tr><th>#</th><th>DNI</th><th>Apellidos y nombres</th><th>Empresa</th><th>Tipo</th><th>Cargo</th><th>Código PETS</th><th>PETS reconocido</th><th>Riesgos para sus 15 preguntas</th></tr>` + FILAS.map((f, i) => {
       const p = resolverPets(f.pets_codigo, f.pets_nombre, f.cargo);
-      const tg = { catalogo: ["tag-ok", "Catálogo"], propio: ["tag-ok", "PETS propio"], palabras: ["tag-mid", "Por palabras clave"], general: ["tag-bad", "Solo generales"] }[p.origen];
-      ({ catalogo: () => nc++, propio: () => np++, palabras: () => nk++, general: () => ng++ })[p.origen]();
-      return `<tr${dup.has(f.dni) ? ` style="background:#fbe9e7"` : ""}><td>${i + 1}</td><td>${esc(f.dni)}</td><td><b>${esc(f.nombres)}</b></td><td>${esc(f.empresa)}</td><td>${esc(f.tipo)}</td><td>${esc(f.cargo)}</td><td>${esc(f.pets_codigo)}</td><td><span class="tag ${tg[0]}">${tg[1]}</span><br><span class="small">${esc(p.n)}</span></td><td class="small">${p.f.map(famN).join(", ") || "Generales del PETS"}</td></tr>`;
+      const tg = { catalogo: ["tag-ok", "Catálogo"], propio: ["tag-ok", "PETS propio"], similar: ["tag-ok", `Se parece ${Math.round((p.similar || {}).score * 100)} %`], palabras: ["tag-mid", "Por palabras clave"], general: ["tag-bad", "Solo generales"] }[p.origen];
+      ({ catalogo: () => nc++, propio: () => np++, similar: () => ns++, palabras: () => nk++, general: () => ng++ })[p.origen]();
+      return `<tr${dup.has(f.dni) ? ` style="background:#fbe9e7"` : ""}><td>${i + 1}</td><td>${esc(f.dni)}</td><td><b>${esc(f.nombres)}</b></td><td>${esc(f.empresa)}</td><td>${esc(f.tipo)}</td><td>${esc(f.cargo)}</td><td>${esc(f.pets_codigo)}</td><td><span class="tag ${tg[0]}">${tg[1]}</span><br><span class="small">${p.similar ? "≈ " + esc(p.similar.c) + " · " + esc(p.similar.n) : esc(p.n)}</span></td><td class="small">${p.f.map(famN).join(", ") || "Generales del PETS"}</td></tr>`;
     }).join("");
     $("#prevTit").textContent = `${FILAS.length} trabajadores`;
-    $("#prevRes").innerHTML = `<span class="tag tag-ok">${nc} del catálogo</span> <span class="tag tag-ok">${np} PETS propios</span> <span class="tag tag-mid">${nk} por palabras clave</span> <span class="tag tag-bad">${ng} sin PETS reconocido</span>${dup.size ? ` <span class="tag tag-bad">${dup.size} DNI repetidos (se registra una vez)</span>` : ""}<br><span class="muted">Los códigos no reconocidos se resuelven con el nombre del PETS y el cargo. Puedes registrarlos en «PETS propios» antes de crear la jornada.</span>`;
+    $("#prevRes").innerHTML = `<span class="tag tag-ok">${nc} del catálogo</span> <span class="tag tag-ok">${np} PETS propios</span> <span class="tag tag-ok">${ns} reconocidos por parecido</span> <span class="tag tag-mid">${nk} por palabras clave</span> <span class="tag tag-bad">${ng} sin PETS reconocido</span>${dup.size ? ` <span class="tag tag-bad">${dup.size} DNI repetidos (se registra una vez)</span>` : ""}<br><span class="muted">Cada contratista numera sus PETS a su manera: el sistema compara el <b>nombre del PETS</b> con las 1040 tareas del catálogo y usa los riesgos de la más parecida. Si alguno sale mal, regístralo en «PETS propios» indicando a qué tarea equivale.</span>`;
   }
   $("#bCrear").onclick = async () => {
     const fecha = $("#nFecha").value; if (!fecha) return toast("Elige la fecha", "err");

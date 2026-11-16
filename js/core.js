@@ -73,8 +73,50 @@ function resolverPets(codigo, nombre, cargo) {
   }
   const cat = PETS_MAP[c];
   if (cat) return { c, n: cat.n, a: AREAS_PETS[cat.a], f: cat.f, propias: [], origen: "catalogo" };
-  const f = familiasPorTexto((nombre || "") + " " + (cargo || ""));
-  return { c: c || "—", n: nombre || "Tarea según cargo: " + (cargo || "—"), a: "No catalogado", f, propias: [], origen: f.length ? "palabras" : "general" };
+  // Código del contratista o interno: se busca la tarea del catálogo que más se parece por su NOMBRE (y el cargo)
+  const kw = familiasPorTexto((nombre || "") + " " + (cargo || ""));
+  const m = parecido(nombre, cargo);
+  if (m && m.score >= 0.34) {
+    const f = [...new Set([...m.p.f, ...kw])].slice(0, 6);
+    return { c: c || "—", n: nombre || m.p.n, a: AREAS_PETS[m.p.a], f, propias: [], origen: "similar", similar: { c: m.p.c, n: m.p.n, score: m.score } };
+  }
+  return { c: c || "—", n: nombre || "Tarea según cargo: " + (cargo || "—"), a: "No catalogado", f: kw, propias: [], origen: kw.length ? "palabras" : "general" };
+}
+
+/* ---------- parecido de nombres de PETS (cualquier numeración) ---------- */
+const VACIAS = new Set("de del la las el los en y o con para por a al un una su sus sobre bajo entre desde hasta pets pet procedimiento escrito trabajo seguro segura tarea tareas actividad actividades realizacion ejecucion uso general generales area zona equipo equipos u.m um mina unidad".split(" "));
+const SINON = [
+  [/\bsmaw\b|electrodo|arco electrico/g, " soldadura arco "], [/\bmig\b|\bmag\b|\btig\b/g, " soldadura "], [/oxiacetil|oxicort/g, " oxicorte corte "],
+  [/scoop\w*|cargador de bajo perfil|lhd/g, " scooptram "], [/dumper|camion de bajo perfil/g, " dumper "], [/bolter|empernador\w*/g, " empernador pernos "],
+  [/shotcret\w*|concreto lanzado|lanzado de concreto/g, " shotcrete "], [/izamiento|izaje\w*|levantamiento de carga/g, " izaje "],
+  [/montaje|instalacion|instalar/g, " instalacion "], [/desmontaje|desinstalacion|retiro/g, " desmontaje "], [/reparacion|reparar|correctivo/g, " reparacion correctivo "],
+  [/preventivo|inspeccion y mantenimiento/g, " preventivo mantenimiento "], [/voladura|disparo|chispeo/g, " voladura "], [/carguio de taladros|carguio de frentes/g, " carguio taladros explosivo "],
+  [/desate|desatado/g, " desatado "], [/sostenimiento|sostener/g, " sostenimiento "], [/gasfiter\w*|fontaner\w*/g, " gasfiteria tuberia "], [/hdpe|polietileno/g, " hdpe tuberia "],
+  [/amoladora|esmeril angular|disco de corte/g, " amoladora esmeril "], [/montacarga\w*|autoelevador/g, " montacargas "], [/camioneta|vehiculo liviano|pick ?up/g, " camioneta "],
+  [/neumatic\w*|llanta\w*/g, " llantas neumaticos "], [/tablero\w*|celda\w* electric\w*/g, " tablero electrico "], [/andamio\w*/g, " andamio "]
+];
+function tokens(t) {
+  let s = " " + norm(t).replace(/[^a-z0-9ñ ]/g, " ") + " ";
+  SINON.forEach(([re, r]) => s = s.replace(re, r));
+  return s.split(/\s+/).filter(w => w.length > 2 && !VACIAS.has(w)).map(w => w.length > 6 ? w.slice(0, 6) : w);
+}
+let IDX = null;
+function indice() {
+  if (IDX) return IDX;
+  const df = {}, docs = PETS.map(p => { const t = [...new Set(tokens(p.n))]; t.forEach(w => df[w] = (df[w] || 0) + 1); return { p, t }; });
+  const N = docs.length, idf = w => Math.log(1 + N / (df[w] || 0.5));
+  docs.forEach(d => { d.w = {}; d.t.forEach(x => d.w[x] = idf(x)); d.norm = Math.sqrt(d.t.reduce((a, x) => a + d.w[x] ** 2, 0)) || 1; });
+  return IDX = { docs, idf };
+}
+function parecido(nombre, cargo) {
+  const tn = tokens(nombre || ""); if (!tn.length) return null;
+  const { docs, idf } = indice();
+  const q = {}; tn.forEach(w => q[w] = Math.max(q[w] || 0, idf(w))); tokens(cargo || "").forEach(w => q[w] = Math.max(q[w] || 0, idf(w) * 0.4));
+  const qn = Math.sqrt(Object.values(q).reduce((a, v) => a + v * v, 0)) || 1;
+  let best = null;
+  for (const d of docs) { let dot = 0; for (const w in q) if (d.w[w]) dot += q[w] * d.w[w]; const sc = dot / (qn * d.norm); if (!best || sc > best.score) best = { p: d.p, score: sc }; }
+  if (best) best.score = Math.round(best.score * 100) / 100;
+  return best;
 }
 
 /* ---------- armado del examen ---------- */
