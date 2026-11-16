@@ -73,6 +73,9 @@ function resolverPets(codigo, nombre, cargo) {
   }
   const cat = PETS_MAP[c];
   if (cat) return { c, n: cat.n, a: AREAS_PETS[cat.a], f: cat.f, propias: [], origen: "catalogo" };
+  // Aprendido: un PETS con el mismo nombre ya fue relacionado antes (aunque venga con otro código)
+  const nn = normNombre(nombre);
+  if (nn) { const ap = Object.values(PROPIOS).find(p => normNombre(p.nombre) === nn); if (ap) { const r = resolverPets(ap.codigo, ap.nombre, cargo); return { ...r, c: c || ap.codigo, origen: "propio", aprendido: ap.codigo }; } }
   // Código del contratista o interno: se busca la tarea del catálogo que más se parece por su NOMBRE (y el cargo)
   const kw = familiasPorTexto((nombre || "") + " " + (cargo || ""));
   const m = parecido(nombre, cargo);
@@ -84,6 +87,7 @@ function resolverPets(codigo, nombre, cargo) {
 }
 
 /* ---------- parecido de nombres de PETS (cualquier numeración) ---------- */
+const normNombre = t => norm(t || "").replace(/[^a-z0-9 ]/g, " ").replace(/\s+/g, " ").trim();
 const VACIAS = new Set("de del la las el los en y o con para por a al un una su sus sobre bajo entre desde hasta pets pet procedimiento escrito trabajo seguro segura tarea tareas actividad actividades realizacion ejecucion uso general generales area zona equipo equipos u.m um mina unidad".split(" "));
 const SINON = [
   [/\bsmaw\b|electrodo|arco electrico/g, " soldadura arco "], [/\bmig\b|\bmag\b|\btig\b/g, " soldadura "], [/oxiacetil|oxicort/g, " oxicorte corte "],
@@ -93,7 +97,15 @@ const SINON = [
   [/preventivo|inspeccion y mantenimiento/g, " preventivo mantenimiento "], [/voladura|disparo|chispeo/g, " voladura "], [/carguio de taladros|carguio de frentes/g, " carguio taladros explosivo "],
   [/desate|desatado/g, " desatado "], [/sostenimiento|sostener/g, " sostenimiento "], [/gasfiter\w*|fontaner\w*/g, " gasfiteria tuberia "], [/hdpe|polietileno/g, " hdpe tuberia "],
   [/amoladora|esmeril angular|disco de corte/g, " amoladora esmeril "], [/montacarga\w*|autoelevador/g, " montacargas "], [/camioneta|vehiculo liviano|pick ?up/g, " camioneta "],
-  [/neumatic\w*|llanta\w*/g, " llantas neumaticos "], [/tablero\w*|celda\w* electric\w*/g, " tablero electrico "], [/andamio\w*/g, " andamio "]
+  [/neumatic\w*|llanta\w*/g, " llantas neumaticos "], [/tablero\w*|celda\w* electric\w*/g, " tablero electrico "], [/andamio\w*/g, " andamio "],
+  [/esmeril angular|amolad\w*|grinder/g, " amoladora esmeril "], [/taladro percutor|percutor/g, " taladro "], [/rotomartillo|martillo perforador|demoledor\w*/g, " rotomartillo martillo "],
+  [/motosierra|sierra a gasolina/g, " motosierra "], [/desbrozad\w*|guadañ\w*|motoguadaña/g, " desbrozadora "], [/hidrolavad\w*|lavadora a presion|karcher/g, " hidrolavadora "],
+  [/compresor\w*/g, " compresora "], [/generador\w*|grupo electrogeno/g, " generador "], [/vibropison|apisonador|canguro/g, " apisonador "],
+  [/desecho\w*|basura\w*/g, " residuos "], [/monitoreo|medicion|muestreo/g, " monitoreo muestreo "], [/\bptar\w*|planta de tratamiento de agua residual/g, " ptard tratamiento agua residual "],
+  [/derrame\w*|fuga\w* de hidrocarburo/g, " derrame "], [/revegetac\w*|reforestac\w*|forestac\w*/g, " revegetacion reforestacion "], [/efluente\w*|vertimiento\w*/g, " efluentes "],
+  [/jumbo\w*/g, " jumbo "], [/volquet\w*|camion de acarreo/g, " volquete "], [/minicargador|bobcat/g, " minicargador "], [/grua\w*/g, " grua "], [/tecle\w*|polipasto/g, " tecle "],
+  [/espacio\w* confinado\w*/g, " confinado "], [/trabajo\w* en altura/g, " altura "], [/bloqueo y etiquetado|\bloto\b/g, " bloqueo "],
+  [/limpieza|aseo|higienizacion/g, " limpieza "], [/desinfeccion|sanitizacion/g, " desinfeccion "], [/fumigac\w*/g, " fumigacion "]
 ];
 function tokens(t) {
   let s = " " + norm(t).replace(/[^a-z0-9ñ ]/g, " ") + " ";
@@ -107,6 +119,14 @@ function indice() {
   const N = docs.length, idf = w => Math.log(1 + N / (df[w] || 0.5));
   docs.forEach(d => { d.w = {}; d.t.forEach(x => d.w[x] = idf(x)); d.norm = Math.sqrt(d.t.reduce((a, x) => a + d.w[x] ** 2, 0)) || 1; });
   return IDX = { docs, idf };
+}
+function parecidos(nombre, cargo, k = 3) {
+  const tn = tokens(nombre || ""); if (!tn.length) return [];
+  const { docs, idf } = indice();
+  const q = {}; tn.forEach(w => q[w] = Math.max(q[w] || 0, idf(w))); tokens(cargo || "").forEach(w => q[w] = Math.max(q[w] || 0, idf(w) * 0.4));
+  const qn = Math.sqrt(Object.values(q).reduce((a, v) => a + v * v, 0)) || 1;
+  return docs.map(d => { let dot = 0; for (const w in q) if (d.w[w]) dot += q[w] * d.w[w]; return { p: d.p, score: Math.round(dot / (qn * d.norm) * 100) / 100 }; })
+    .filter(x => x.score > 0.12).sort((a, b) => b.score - a.score).slice(0, k);
 }
 function parecido(nombre, cargo) {
   const tn = tokens(nombre || ""); if (!tn.length) return null;

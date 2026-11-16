@@ -16,7 +16,7 @@ Examen de ingreso por QR que **reemplaza la entrevista**: 40 preguntas para marc
 
 ## Flujo semanal (lunes)
 1. Gestión Humana llena `plantilla/Plantilla_Evaluacion_Ingreso.xlsx` (DNI, nombres, empresa, CIA/contratista, cargo y código PETS).
-2. En `admin.html` → **Programar evaluación** → elegir el día → cargar el Excel → **Programar**. La evaluación se activa sola ese día (hora de Lima). Los exámenes no se guardan: cada uno se arma al iniciar, con una semilla por trabajador, a partir del banco fijo (1040 PETS, más de 370 preguntas generales y 68 propias de la unidad: tolerancia cero, reglas de oro, reglas internas, ADN, propósito y Central Z1, tomadas del Panel Informativo), así no se genera nada nuevo cada semana.
+2. En `admin.html` → **Programar evaluación** → elegir el día → cargar el Excel → **Programar**. La evaluación se activa sola ese día (hora de Lima). Los exámenes no se guardan: cada uno se arma al iniciar, con una semilla por trabajador, a partir del banco fijo (1576 PETS, más de 370 preguntas generales y 68 propias de la unidad: tolerancia cero, reglas de oro, reglas internas, ADN, propósito y Central Z1, tomadas del Panel Informativo), así no se genera nada nuevo cada semana.
 3. Proyectar o imprimir el **QR general**. Es fijo y siempre abre la jornada del día.
 4. Al terminar, **Cerrar** la jornada, exportar el Excel e imprimir las constancias.
 

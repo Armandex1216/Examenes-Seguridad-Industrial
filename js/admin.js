@@ -69,7 +69,7 @@
     return `<span class="tag tag-n">Pasada</span>`;
   }
   async function abrirJ(id) {
-    JACT = JORNADAS.find(j => j.id === id) || JACT; tab("detalle");
+    JACT = JORNADAS.find(j => j.id === id) || JACT; if (!JACT) return tab("jornadas"); tab("detalle");
     $("#dTit").textContent = fFecha(JACT.fecha); $("#dSub").innerHTML = esc(JACT.titulo) + " · " + etiqueta(JACT) + (JACT.fecha > hoyLima() ? " <span class='small muted'>Se activará automáticamente ese día.</span>" : "");
     $("#bEstado").textContent = JACT.estado === "abierta" ? "🔒 Cerrar" : "🔓 Reabrir";
     await cargarDetalle();
@@ -197,20 +197,61 @@
     let nc = 0, np = 0, ns = 0, nk = 0, ng = 0;
     const dup = new Set(), vistos = new Set();
     FILAS.forEach(f => { if (vistos.has(f.dni)) dup.add(f.dni); vistos.add(f.dni); });
-    $("#tblPrev").innerHTML = `<tr><th>#</th><th>DNI</th><th>Apellidos y nombres</th><th>Empresa</th><th>Tipo</th><th>Cargo</th><th>Código PETS</th><th>PETS reconocido</th><th>Riesgos para sus 15 preguntas</th></tr>` + FILAS.map((f, i) => {
-      const p = resolverPets(f.pets_codigo, f.pets_nombre, f.cargo);
-      const tg = { catalogo: ["tag-ok", "Catálogo"], propio: ["tag-ok", "PETS propio"], similar: ["tag-ok", `Se parece ${Math.round((p.similar || {}).score * 100)} %`], palabras: ["tag-mid", "Por palabras clave"], general: ["tag-bad", "Solo generales"] }[p.origen];
-      ({ catalogo: () => nc++, propio: () => np++, similar: () => ns++, palabras: () => nk++, general: () => ng++ })[p.origen]();
-      return `<tr${dup.has(f.dni) ? ` style="background:#fbe9e7"` : ""}><td>${i + 1}</td><td>${esc(f.dni)}</td><td><b>${esc(f.nombres)}</b></td><td>${esc(f.empresa)}</td><td>${esc(f.tipo)}</td><td>${esc(f.cargo)}</td><td>${esc(f.pets_codigo)}</td><td><span class="tag ${tg[0]}">${tg[1]}</span><br><span class="small">${p.similar ? "≈ " + esc(p.similar.c) + " · " + esc(p.similar.n) : esc(p.n)}</span></td><td class="small">${p.f.map(famN).join(", ") || "Generales del PETS"}</td></tr>`;
+    $("#tblPrev").innerHTML = `<tr><th>#</th><th>DNI</th><th>Apellidos y nombres</th><th>Empresa</th><th>Cargo</th><th>PETS que envió la empresa</th><th>Relación con el catálogo del sistema</th><th>Riesgos para sus 15 preguntas</th></tr>` + FILAS.map((f, i) => {
+      const p = f.eleccion ? resolverPets(f.eleccion) : resolverPets(f.pets_codigo, f.pets_nombre, f.cargo);
+      const org = f.eleccion ? "elegido" : p.origen;
+      ({ catalogo: () => nc++, propio: () => np++, elegido: () => np++, similar: () => ns++, palabras: () => nk++, general: () => ng++ })[org]();
+      let rel;
+      if (org === "catalogo") rel = `<span class="tag tag-ok">Código del catálogo</span><br><span class="small">${esc(p.n)}</span>`;
+      else if (org === "propio") rel = `<span class="tag tag-ok">${p.aprendido ? "Aprendido" : "PETS propio"}</span><br><span class="small">${esc(p.n)}${p.aprendido ? " → " + esc(p.aprendido) : ""}</span>`;
+      else {
+        const ops = parecidos(f.pets_nombre, f.cargo, 3), sel = f.eleccion || (p.similar ? p.similar.c : "");
+        const pct = x => Math.round(x * 100) + " %";
+        rel = `${org === "elegido" ? `<span class="tag tag-ok">Elegido por ti · se recordará</span>` : org === "similar" ? `<span class="tag tag-ok">Se parece ${pct(p.similar.score)}</span>` : `<span class="tag tag-${org === "general" ? "bad" : "mid"}">Sin parecido claro</span>`}
+          <select class="inp rel" data-i="${i}" style="padding:6px;font-size:12.5px;margin-top:4px;min-width:260px">
+            <option value="">${ops.length ? "— elegir otra tarea —" : "— buscar tarea —"}</option>
+            ${ops.map(o => `<option value="${o.p.c}" ${o.p.c === sel ? "selected" : ""}>${pct(o.score)} · ${esc(o.p.n)} (${o.p.c})</option>`).join("")}
+            ${sel && !ops.some(o => o.p.c === sel) ? `<option value="${sel}" selected>${esc((PETS_MAP[sel] || {}).n || sel)} (${sel})</option>` : ""}
+            <option value="__buscar">🔎 Buscar en el catálogo…</option></select>`;
+      }
+      return `<tr${dup.has(f.dni) ? ` style="background:#fbe9e7"` : ""}><td>${i + 1}</td><td>${esc(f.dni)}</td><td><b>${esc(f.nombres)}</b></td><td>${esc(f.empresa)}<br><span class="small muted">${esc(f.tipo)}</span></td><td>${esc(f.cargo)}</td><td><b>${esc(f.pets_codigo || "—")}</b><br><span class="small">${esc(f.pets_nombre || "")}</span></td><td>${rel}</td><td class="small">${p.f.map(famN).join(", ") || "Generales del PETS"}</td></tr>`;
     }).join("");
+    $$("#tblPrev select.rel").forEach(el => el.onchange = () => {
+      const i = +el.dataset.i;
+      if (el.value === "__buscar") return buscarTarea(FILAS[i], c => { FILAS[i].eleccion = c; previa(); }, () => previa());
+      FILAS[i].eleccion = el.value || null; previa();
+    });
     $("#prevTit").textContent = `${FILAS.length} trabajadores`;
-    $("#prevRes").innerHTML = `<span class="tag tag-ok">${nc} del catálogo</span> <span class="tag tag-ok">${np} PETS propios</span> <span class="tag tag-ok">${ns} reconocidos por parecido</span> <span class="tag tag-mid">${nk} por palabras clave</span> <span class="tag tag-bad">${ng} sin PETS reconocido</span>${dup.size ? ` <span class="tag tag-bad">${dup.size} DNI repetidos (se registra una vez)</span>` : ""}<br><span class="muted">Cada contratista numera sus PETS a su manera: el sistema compara el <b>nombre del PETS</b> con las 1040 tareas del catálogo y usa los riesgos de la más parecida. Si alguno sale mal, regístralo en «PETS propios» indicando a qué tarea equivale.</span>`;
+    $("#prevRes").innerHTML = `<span class="tag tag-ok">${nc} código del catálogo</span> <span class="tag tag-ok">${np} propios / aprendidos / elegidos</span> <span class="tag tag-ok">${ns} reconocidos por parecido</span> <span class="tag tag-mid">${nk + ng} sin parecido claro (revisar)</span>${dup.size ? ` <span class="tag tag-bad">${dup.size} DNI repetidos (se registra una vez)</span>` : ""}<br><span class="muted">El sistema compara el <b>nombre del PETS</b> de la empresa con las ${PETS.length} tareas del catálogo y te propone las 3 más parecidas. Si cambias la relación, <b>el sistema la recuerda</b> para ese código y ese nombre en las próximas evaluaciones.</span>`;
+  }
+  function buscarTarea(f, ok, cancel) {
+    const s = sheet(`<div class="row"><h2 class="grow" style="font-size:22px">Relacionar PETS</h2><button class="btn btn-line" data-x>✕</button></div>
+      <div class="card small"><b>${esc(f.pets_codigo || "—")}</b> · ${esc(f.pets_nombre || "")} <span class="muted">(${esc(f.cargo || "")})</span></div>
+      <input class="inp" id="bt" placeholder="Escribe palabras de la tarea: soldadura, scoop, residuos, amoladora…"><div id="btr" style="margin-top:10px;max-height:60vh;overflow:auto"></div>`);
+    const pint = () => { const q = $("#bt", s).value; const l = q.trim().length > 1 ? parecidos(q, "", 25) : parecidos(f.pets_nombre, f.cargo, 25);
+      $("#btr", s).innerHTML = l.map(o => `<button class="res" data-c="${o.p.c}" style="margin-bottom:6px"><span class="grow"><b>${esc(o.p.n)}</b><small>${o.p.c} · ${esc(AREAS_PETS[o.p.a])} · ${o.p.f.map(famN).join(", ")}</small></span><span class="tag tag-n">${Math.round(o.score * 100)} %</span></button>`).join("") || `<div class="muted small">Sin resultados.</div>`;
+      $$("[data-c]", s).forEach(b => b.onclick = () => { s.remove(); ok(b.dataset.c); }); };
+    $("#bt", s).oninput = pint; pint(); $$("[data-x]", s).forEach(b => b.onclick = () => { s.remove(); cancel(); });
   }
   $("#bCrear").onclick = async () => {
     const fecha = $("#nFecha").value; if (!fecha) return toast("Elige la fecha", "err");
     const b = $("#bCrear"); b.disabled = true;
-    try { const r = await A("eval_admin_crear", { p_fecha: fecha, p_titulo: $("#nTit").value, p_filas: FILAS }); toast(`Evaluación programada para el ${fCorta(fecha)} con ${r.n} trabajadores`, "ok"); FILAS = []; $("#prev").classList.add("hide"); await cargarJornadas(); abrirJ(r.id); }
-    catch (e) { toast(e.message, "err"); } b.disabled = false;
+    try {
+      // Aprendizaje: guarda las relaciones elegidas (código y nombre de la empresa → tarea del catálogo)
+      const vistos = new Set();
+      for (const f of FILAS.filter(x => x.eleccion)) {
+        const cod = (f.pets_codigo || "").toUpperCase().trim() || ("NOM-" + normNombre(f.pets_nombre).slice(0, 40).replace(/ /g, "-").toUpperCase());
+        if (vistos.has(cod)) continue; vistos.add(cod);
+        const base = PETS_MAP[f.eleccion];
+        await A("eval_admin_pets_guardar", { p_codigo: cod, p_nombre: f.pets_nombre || base.n, p_area: AREAS_PETS[base.a], p_base: base.c, p_familias: base.f, p_preguntas: (PROPIOS[cod] || {}).preguntas || [] });
+        if (!f.pets_codigo) f.pets_codigo = cod;
+      }
+      if (vistos.size) await cargarPropios();
+      const filas = FILAS.map(({ eleccion, ...x }) => x);
+      const r = await A("eval_admin_crear", { p_fecha: fecha, p_titulo: $("#nTit").value, p_filas: filas });
+      toast(`Evaluación programada para el ${fCorta(fecha)} con ${r.n} trabajadores${vistos.size ? ` · ${vistos.size} relación(es) aprendida(s)` : ""}`, "ok");
+      FILAS = []; $("#prev").classList.add("hide"); await cargarJornadas(); abrirJ(r.id);
+    } catch (e) { toast(e.message, "err"); } b.disabled = false;
   };
 
   /* ---------- catálogo ---------- */

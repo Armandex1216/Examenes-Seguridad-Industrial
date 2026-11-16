@@ -520,6 +520,15 @@ Atención de primeros auxilios|gen`
   const add = (a, n, f) => { const k = (L.filter(x => x.a === a).length + 1); L.push({ c: `PETS-${a}-${String(k).padStart(3, "0")}`, n, a, f: f.split(",") }); };
   for (const a in F) F[a].split("\n").forEach(l => { const [n, f] = l.split("|"); add(a, n.trim(), f.trim()); });
   C.forEach(([a, eqs, acts, fam]) => eqs.forEach(e => acts.forEach(ac => add(a, `${ac} ${e}`, fam[ac]))));
+  // Ampliación (pets_ext.js): se agrega al final para mantener los códigos anteriores
+  const X = window.PETS_EXT;
+  if (X) {
+    Object.assign(AREAS, X.areas);
+    const seen = new Set(L.map(p => p.n.toLowerCase()));
+    const add2 = (a, n, f) => { n = n.trim(); if (seen.has(n.toLowerCase())) return; seen.add(n.toLowerCase()); add(a, n, [...new Set(f.split(",").filter(Boolean))].join(",")); };
+    for (const a in X.F) X.F[a].split("\n").forEach(l => { const [n, f] = l.split("|"); add2(a, n, f); });
+    X.C.forEach(([a, eqs, acts]) => eqs.forEach(e => { const [en, ef = ""] = e.split("|"); acts.forEach(ac => { const [an, af = ""] = ac.split("|"); add2(a, `${an} ${en}`, (ef || "") + "," + af); }); }));
+  }
   window.AREAS_PETS = AREAS;
   window.PETS = L;
   window.PETS_MAP = Object.fromEntries(L.map(p => [p.c, p]));
