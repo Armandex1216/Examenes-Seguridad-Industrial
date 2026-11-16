@@ -163,3 +163,4 @@ body.exam{background:#f4efe3;user-select:none;-webkit-user-select:none;-webkit-t
   @page{size:A4;margin:8mm}
 }
 @media (max-width:560px){.doc{padding:20px 16px}.doc .firmas{grid-template-columns:1fr 1fr}.doc .qr{grid-column:1/-1}}
+body.exam #pie{display:none}
