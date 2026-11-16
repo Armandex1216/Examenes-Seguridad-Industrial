@@ -18,8 +18,12 @@ const MSG = {
   JORNADA_CERRADA: "Esta evaluación ya fue cerrada por el evaluador.",
   YA_FINALIZADO: "Este examen ya fue enviado.",
   NO_INICIADO: "El examen no fue iniciado correctamente. Vuelve a ingresar.",
-  PIN_INCORRECTO: "PIN incorrecto.",
-  YA_FIRMADO: "La constancia ya fue firmada."
+  PIN_INCORRECTO: "Tu sesión expiró. Vuelve a ingresar.",
+  YA_FIRMADO: "La constancia ya fue firmada.",
+  NO_PROGRAMADO: "Tu DNI no figura en la evaluación de hoy.",
+  CREDENCIALES_INCORRECTAS: "Correo o contraseña incorrectos.",
+  CLAVE_ACTUAL_INCORRECTA: "La contraseña actual no es correcta.",
+  CLAVE_CORTA: "La nueva contraseña debe tener al menos 8 caracteres."
 };
 
 async function rpc(fn, args = {}) {
