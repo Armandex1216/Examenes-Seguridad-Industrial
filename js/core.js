@@ -101,11 +101,14 @@ function armarExamen(part) {
   sel = sel.concat(tomar(shuffle(plantillas, r).slice(0, 1).concat(BANCO.fam.gen.q), nP - sel.length));
   if (sel.length < nP) sel = sel.concat(tomar([].concat(...Object.values(BANCO.fam).map(x => x.q)), nP - sel.length));
 
+  // Secciones generales: primero preguntas propias de la unidad (reglas, ADN, Z1) y se completa con el banco general
+  const U = window.BANCO_UNIDAD || {};
+  const mezcla = (k, nU, total) => { const a = tomar(U[k] || [], nU); return shuffle(a.concat(tomar(BANCO[k], total - a.length)), r); };
   const bloques = [
     ["pets", shuffle(sel, r)],
-    ["normas", tomar(BANCO.normas, CFG.secciones[1].cant)],
-    ["emerg", tomar(BANCO.emerg, CFG.secciones[2].cant)],
-    ["iperc", tomar(BANCO.iperc, CFG.secciones[3].cant)]
+    ["normas", mezcla("normas", 7, CFG.secciones[1].cant)],
+    ["emerg", mezcla("emerg", 5, CFG.secciones[2].cant)],
+    ["iperc", mezcla("iperc", 2, CFG.secciones[3].cant)]
   ];
   const preguntas = [];
   bloques.forEach(([s, qs]) => qs.forEach(q => {

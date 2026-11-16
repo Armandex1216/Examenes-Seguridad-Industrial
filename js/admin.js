@@ -20,7 +20,7 @@
     $("#login").classList.add("hide"); $("#app").classList.remove("hide");
     await cargarPropios();
     const nq = Object.values(BANCO.fam).reduce((a, f) => a + f.q.length, 0);
-    $("#bancoInfo").textContent = `${PETS.length} PETS en catálogo, ${Object.keys(PROPIOS).length} PETS propios, ${nq + BANCO.normas.length + BANCO.emerg.length + BANCO.iperc.length} preguntas base (${FAMS.length} familias de riesgo).`;
+    $("#bancoInfo").textContent = `${PETS.length} PETS en catálogo, ${Object.keys(PROPIOS).length} PETS propios, ${nq + BANCO.normas.length + BANCO.emerg.length + BANCO.iperc.length + Object.values(BANCO_UNIDAD).reduce((x, l) => x + l.length, 0)} preguntas base (${FAMS.length} familias de riesgo).`;
     $("#nFecha").value = new Date(hoyLima() + "T12:00:00").getDay() === 1 ? hoyLima() : lunesProximo();
     tab("jornadas");
   }
