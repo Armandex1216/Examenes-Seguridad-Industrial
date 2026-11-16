@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Panel de Evaluaciones SSOMA · Administración</title>
+<link rel="icon" href="assets/img/favicon.svg">
+<link rel="stylesheet" href="css/app.css">
+<link rel="stylesheet" href="css/admin.css">
+</head>
+<body class="adm">
+
+<section id="login" class="hide">
+  <header class="hero"><div class="top"><img class="logo" src="assets/img/logo-hochschild-blanco.png" alt=""><span class="chip">Administración</span></div>
+    <h1>Panel de <span>evaluaciones</span></h1><p>Seguridad Industrial · Gestión de evaluaciones de ingreso</p></header>
+  <div class="wrap lift" style="max-width:440px"><div class="card">
+    <label class="lbl" for="pin">PIN de administrador</label>
+    <input id="pin" type="password" class="inp" inputmode="numeric" placeholder="••••••" autocomplete="current-password">
+    <button class="btn btn-gold btn-block" id="bLogin" style="margin-top:12px">Ingresar</button>
+  </div></div>
+</section>
+
+<div id="app" class="hide">
+  <aside class="side">
+    <div class="brand"><img src="assets/img/logo-hochschild-blanco.png" alt=""><span>Evaluaciones<br><b>SSOMA</b></span></div>
+    <nav>
+      <button data-t="jornadas" class="on">📋 <span>Jornadas</span></button>
+      <button data-t="nueva">➕ <span>Nueva jornada</span></button>
+      <button data-t="pets">📚 <span>Catálogo PETS</span></button>
+      <button data-t="propios">⬆ <span>PETS propios</span></button>
+      <button data-t="ajustes">⚙ <span>Ajustes</span></button>
+    </nav>
+    <button class="out" id="bSalir">Cerrar sesión</button>
+  </aside>
+  <main class="main">
+
+    <!-- JORNADAS -->
+    <div class="tab" id="t-jornadas">
+      <div class="head"><div><h2>Jornadas de evaluación</h2><p class="muted">Una jornada por día de evaluación (normalmente los lunes).</p></div>
+        <div class="row"><button class="btn btn-line" id="bQRGen">▣ QR general</button><button class="btn btn-gold" data-go="nueva">➕ Nueva jornada</button></div></div>
+      <div id="kpis" class="kpis"></div>
+      <div id="listaJ" class="jgrid"></div>
+    </div>
+
+    <!-- DETALLE -->
+    <div class="tab hide" id="t-detalle">
+      <div class="head"><div><button class="btn btn-line small" data-go="jornadas">← Jornadas</button>
+        <h2 id="dTit" style="margin-top:8px">—</h2><p class="muted" id="dSub"></p></div>
+        <div class="row wrapr"><button class="btn btn-dark" id="bQR">▣ QR de la jornada</button><button class="btn btn-line" id="bExport">⬇ Excel de resultados</button><button class="btn btn-line" id="bPrintAll">🖨 Constancias</button><button class="btn btn-line" id="bAgregar">➕ Agregar</button><button class="btn btn-line" id="bEstado">Cerrar</button><button class="btn btn-red" id="bBorrarJ">Eliminar</button></div></div>
+      <div id="dKpis" class="kpis"></div>
+      <div class="card" style="padding:0;overflow:auto"><table class="tbl" id="tblP"></table></div>
+      <label class="chk small"><input type="checkbox" id="autoRef" checked> Actualizar automáticamente cada 20 s (solo mientras esta pantalla está abierta)</label>
+    </div>
+
+    <!-- NUEVA -->
+    <div class="tab hide" id="t-nueva">
+      <div class="head"><div><h2>Nueva jornada de evaluación</h2><p class="muted">Carga la plantilla que llena Gestión Humana y el examen se arma solo para cada trabajador según su cargo y PETS.</p></div>
+        <a class="btn btn-line" href="plantilla/Plantilla_Evaluacion_Ingreso.xlsx" download>⬇ Descargar plantilla Excel</a></div>
+      <div class="card">
+        <div class="g3">
+          <div><label class="lbl">Fecha de evaluación</label><input type="date" id="nFecha" class="inp"></div>
+          <div class="span2"><label class="lbl">Título</label><input id="nTit" class="inp" value="Evaluación de ingreso"></div>
+        </div>
+        <div class="drop" id="drop"><input type="file" id="fx" accept=".xlsx,.xls,.csv"><div><div style="font-size:34px">📥</div><b>Arrastra aquí la plantilla Excel</b><br><span class="muted small">o haz clic para elegir el archivo (.xlsx)</span></div></div>
+      </div>
+      <div id="prev" class="hide">
+        <div class="card"><div class="row"><h3 class="grow" id="prevTit">Vista previa</h3><button class="btn btn-gold" id="bCrear">✓ Crear jornada y generar exámenes</button></div>
+          <div id="prevRes" class="small" style="margin:8px 0"></div>
+          <div style="overflow:auto;max-height:60vh"><table class="tbl" id="tblPrev"></table></div></div>
+      </div>
+    </div>
+
+    <!-- CATÁLOGO -->
+    <div class="tab hide" id="t-pets">
+      <div class="head"><div><h2>Catálogo de PETS</h2><p class="muted" id="petsCount"></p></div></div>
+      <div class="card"><div class="g3"><div class="span2"><input id="pq" class="inp" placeholder="Buscar por código o tarea (ej. PETS-MSU-012, soldadura, scoop)…"></div>
+        <select id="pa" class="inp"><option value="">Todas las áreas</option></select></div></div>
+      <div class="card" style="padding:0;overflow:auto;max-height:68vh"><table class="tbl" id="tblPets"></table></div>
+    </div>
+
+    <!-- PROPIOS -->
+    <div class="tab hide" id="t-propios">
+      <div class="head"><div><h2>PETS propios de la unidad</h2><p class="muted">Sube el PETS de la unidad con su código real. El sistema detecta sus riesgos y usa también tus preguntas propias.</p></div>
+        <button class="btn btn-gold" id="bNuevoP">➕ Subir / crear PETS</button></div>
+      <div id="listaP" class="jgrid"></div>
+    </div>
+
+    <!-- AJUSTES -->
+    <div class="tab hide" id="t-ajustes">
+      <div class="head"><div><h2>Ajustes</h2></div></div>
+      <div class="card" style="max-width:520px"><label class="lbl">Cambiar PIN de administrador</label>
+        <input id="pinN" type="password" class="inp" placeholder="Nuevo PIN (mínimo 4 caracteres)"><button class="btn btn-dark" id="bPin" style="margin-top:10px">Guardar PIN</button></div>
+      <div class="card" style="max-width:720px"><label class="lbl">Configuración del examen</label>
+        <ul class="small" style="margin:0;padding-left:18px;line-height:1.8">
+          <li>40 preguntas: 15 PETS · 10 normas/reglas de oro/tolerancia cero · 10 emergencias/reporte/documentación · 5 IPERC/derecho a negarse.</li>
+          <li>Duración: 50 minutos desde «Iniciar». Aprobación: 75 % (30/40). Nota vigesimal = correctas × 20 / 40.</li>
+          <li>Cada trabajador recibe un examen distinto (preguntas y orden de alternativas aleatorios, fijos para su intento).</li>
+          <li>3 salidas de la página (cambiar de app/pestaña) envían el examen automáticamente.</li>
+          <li>Banco: <span id="bancoInfo"></span></li>
+        </ul></div>
+    </div>
+  </main>
+</div>
+
+<script src="lib/qrcode.js"></script>
+<script src="js/banco.js"></script>
+<script src="js/pets.js"></script>
+<script src="js/core.js"></script>
+<script src="js/constancia.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

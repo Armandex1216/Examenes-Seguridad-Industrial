@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#1a1917">
+<meta name="robots" content="noindex">
+<title>Evaluación de Ingreso SSOMA · Pallancata – Selene</title>
+<link rel="icon" href="assets/img/favicon.svg">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+
+<!-- ============ INICIO / BÚSQUEDA ============ -->
+<section id="v-inicio">
+  <header class="hero">
+    <div class="top"><img class="logo" src="assets/img/logo-hochschild-blanco.png" alt="Hochschild Mining"><span class="chip" id="chipFecha">Evaluación</span></div>
+    <h1>Evaluación de <span>ingreso</span><br>SSOMA</h1>
+    <p>U.M. Pallancata – Selene · 40 preguntas · 50 minutos · Nota mínima 75 %</p>
+  </header>
+  <div class="wrap lift">
+    <div class="card" id="cardBuscar">
+      <div id="jornadaBox"><div class="row"><span class="spin"></span><span class="muted">Buscando la evaluación de hoy…</span></div></div>
+      <div id="buscarBox" class="hide">
+        <label class="lbl" for="q">Busca tu nombre o DNI</label>
+        <input id="q" class="inp" placeholder="Escribe tus apellidos o DNI" autocomplete="off" autocapitalize="characters">
+        <div id="resultados" class="res-list"></div>
+      </div>
+    </div>
+    <div class="card small muted" style="margin-top:14px">
+      <b style="color:var(--ink)">¿Cómo funciona?</b> Busca tu nombre, confirma tus datos con tu DNI y da clic en <b>Iniciar examen</b>. El tiempo corre desde ese momento. Al terminar verás tu nota y firmarás tu constancia.
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONFIRMACIÓN ============ -->
+<section id="v-confirmar" class="hide">
+  <header class="hero" style="padding-bottom:70px">
+    <div class="top"><img class="logo" src="assets/img/logo-hochschild-blanco.png" alt=""><button class="chip" id="btnVolver">← Volver</button></div>
+    <h1 id="cNombre" style="font-size:clamp(24px,6vw,34px)">—</h1>
+    <p id="cSub">Confirma tus datos</p>
+  </header>
+  <div class="wrap lift">
+    <div class="card">
+      <span class="lbl">Datos del evaluado</span>
+      <dl class="dl" id="cDatos"></dl>
+    </div>
+    <div class="card">
+      <label class="lbl" for="dni">Confirma tu identidad: escribe tu DNI</label>
+      <input id="dni" class="inp" inputmode="numeric" maxlength="12" placeholder="N° de DNI / CE" autocomplete="off">
+      <div id="dniMsg" class="small" style="color:var(--bad);margin-top:6px"></div>
+    </div>
+    <div class="card" id="reglasCard">
+      <span class="lbl">Antes de empezar</span>
+      <ul class="rules">
+        <li><span class="ic">40</span><div><b>40 preguntas para marcar.</b> 15 de tu PETS, 10 de normas y reglas de oro, 10 de emergencias y 5 de IPERC y derecho a negarse.</div></li>
+        <li><span class="ic">50'</span><div><b>50 minutos</b> desde que presionas «Iniciar». Al llegar a cero, el examen se envía solo.</div></li>
+        <li><span class="ic">↔</span><div>Puedes <b>saltar preguntas y volver</b> después. Marca con ⚑ las que quieras revisar.</div></li>
+        <li><span class="ic">!</span><div><b>No salgas de esta página.</b> Cambiar de app, de pestaña o minimizar queda registrado. A la <b>3.ª salida</b> el examen se envía automáticamente.</div></li>
+        <li><span class="ic">75</span><div>Apruebas con <b>75 % (30 de 40)</b>. Al final verás tu nota y firmarás tu constancia.</div></li>
+      </ul>
+      <label class="chk"><input type="checkbox" id="acepto"> <span>Declaro que soy la persona indicada, que rendiré el examen de forma personal y sin ayuda, y que acepto las reglas de la evaluación.</span></label>
+      <button class="btn btn-gold btn-block" id="btnIniciar" style="margin-top:16px" disabled>▶ Iniciar examen</button>
+    </div>
+  </div>
+</section>
+
+<!-- ============ EXAMEN ============ -->
+<section id="v-examen" class="hide">
+  <div class="watermark" id="wm"></div>
+  <div class="xbar">
+    <div class="in">
+      <div class="timer" id="timer">50:00</div>
+      <div class="xname"><b id="xNombre">—</b><small id="xInfo">—</small></div>
+    </div>
+    <div class="prog"><i id="progBar"></i></div>
+  </div>
+  <div class="qwrap">
+    <div class="row" style="justify-content:space-between"><span class="secname" id="qSec">—</span><span class="small muted" id="qCont">0/40 respondidas</span></div>
+    <div class="qcard" id="qCard">
+      <div class="qnum" id="qNum">Pregunta 1 de 40</div>
+      <div class="qtxt" id="qTxt"></div>
+      <div class="opts" id="qOpts"></div>
+    </div>
+  </div>
+  <div class="xfoot"><div class="in">
+    <button class="btn btn-line" id="bPrev" aria-label="Anterior">‹</button>
+    <button class="flag" id="bFlag">⚑ Revisar</button>
+    <button class="grid-btn" id="bGrid">▦ Preguntas</button>
+    <button class="btn btn-gold grow" id="bNext">Siguiente ›</button>
+  </div></div>
+</section>
+
+<!-- ============ RESULTADO + FIRMA ============ -->
+<section id="v-resultado" class="hide">
+  <header class="hero" style="padding-bottom:80px">
+    <div class="top"><img class="logo" src="assets/img/logo-hochschild-blanco.png" alt=""><span class="chip">Resultado</span></div>
+    <h1 id="rNombre" style="font-size:clamp(22px,6vw,32px)">—</h1>
+    <p id="rSub"></p>
+  </header>
+  <div class="wrap lift">
+    <div class="card center">
+      <div class="ring" id="rRing"></div>
+      <div class="verdict" id="rVer">—</div>
+      <div class="muted small" id="rDet"></div>
+      <div class="bars" id="rBars" style="text-align:left;margin-top:16px"></div>
+    </div>
+    <div class="card" id="firmaCard">
+      <span class="lbl">Firma de constancia</span>
+      <p class="small" style="margin-top:0">Declaro que rendí personalmente esta evaluación de ingreso en materia de Seguridad y Salud Ocupacional, que los datos consignados son correctos y que estoy conforme con el resultado obtenido.</p>
+      <div class="sigbox"><canvas id="sig"></canvas><div class="line"></div><div class="ph" id="sigPh">Firma aquí con tu dedo</div></div>
+      <div class="row" style="margin-top:12px"><button class="btn btn-line" id="sigClear">Borrar</button><button class="btn btn-gold grow" id="sigOk">✍ Firmar y generar constancia</button></div>
+    </div>
+    <div class="card center hide" id="firmadoCard">
+      <div style="font-size:42px">✅</div>
+      <h3 style="font-size:22px;margin:6px 0">Constancia registrada</h3>
+      <p class="muted small">Código de verificación: <b id="rCod" style="color:var(--ink)"></b></p>
+      <a class="btn btn-dark btn-block" id="rVerC" href="#">Ver / imprimir constancia</a>
+      <p class="small muted" style="margin-bottom:0">Ya puedes cerrar esta página y entregar el celular.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CONSTANCIA ============ -->
+<section id="v-constancia" class="hide"></section>
+
+<div class="foot noprint" id="pie">Seguridad Industrial · U.M. Pallancata – Selene</div>
+
+<script src="lib/qrcode.js"></script>
+<script src="js/banco.js"></script>
+<script src="js/pets.js"></script>
+<script src="js/core.js"></script>
+<script src="js/constancia.js"></script>
+<script src="js/examen.js"></script>
+</body>
+</html>
